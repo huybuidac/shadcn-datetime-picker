@@ -1,26 +1,30 @@
 # Shadcn Datetime Picker
 
-A datetime picker component for Shadcn UI.
+A datetime picker component for Shadcn UI, designed to provide a user-friendly interface for selecting dates and times. This component is highly customizable and supports various features such as time zone selection and custom triggers.
+
+Demo: https://shadcn-datetime-picker-xi.vercel.app/
 
 ![Simple DateTime Picker](images/simple.png)
 
 ### Installation
 
-1. Install Shadcn dependencies
-```bash
-npx shadcn@latest add button dropdown-menu input label popover select scroll-area
-```
+To install the Shadcn Datetime Picker, follow these steps:
 
-2. Install react-day-picker
-```bash
-yarn add react-day-picker@^9
-```
+1. **Install Shadcn dependencies**
+   ```bash
+   npx shadcn@latest add button dropdown-menu input label popover select scroll-area
+   ```
 
-3. Copy and paste [datetime-picker.tsx](./components/datetime-picker.tsx) into your project.
+2. **Install react-day-picker**
+   ```bash
+   yarn add react-day-picker@^9
+   ```
+
+3. **Copy and paste** [datetime-picker.tsx](./components/datetime-picker.tsx) into your project.
 
 ### Usage
 
-1. Simple
+#### 1. Simple DateTime Picker
 ```tsx
 import { DateTimePicker } from '@/components/datetime-picker';
 
@@ -30,7 +34,7 @@ export default function Home() {
 }
 ```
 
-2. With timezone
+#### 2. DateTime Picker with Timezone
 ```tsx
 import { DateTimePicker } from '@/components/datetime-picker';
 
@@ -40,7 +44,7 @@ export default function Home() {
 }
 ```
 
-3. Custom trigger
+#### 3. Custom Trigger for DateTime Picker
 ```tsx
 import { DateTimePicker } from '@/components/datetime-picker';
 
@@ -55,3 +59,7 @@ export default function Home() {
   );
 }
 ```
+
+### Contributing
+
+We welcome contributions! Please feel free to submit a pull request or open an issue for any suggestions or improvements.
