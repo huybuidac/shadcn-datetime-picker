@@ -3,7 +3,16 @@
 import * as React from 'react';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { CalendarIcon } from '@radix-ui/react-icons';
-import { format, getMonth, getYear, setHours, setMinutes, setMonth, setSeconds, setYear } from 'date-fns';
+import {
+  format,
+  getMonth,
+  getYear,
+  setHours,
+  setMinutes,
+  setMonth as setMonthFns,
+  setSeconds,
+  setYear,
+} from 'date-fns';
 import { tz } from '@date-fns/tz';
 import { CheckIcon, ChevronDownIcon, Clock } from 'lucide-react';
 import { DayPicker, TZDate, formatMonthDropdown } from 'react-day-picker';
@@ -17,27 +26,41 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
+export type CalendarProps = Omit<React.ComponentProps<typeof DayPicker>, 'mode'>;
+
 export function DateTimePicker({
   value,
   onChange,
   timezone,
   renderTrigger,
+  ...props
 }: {
   value: Date | undefined;
   onChange: (date: Date) => void;
   timezone?: string;
   renderTrigger?: (value: Date | undefined, timezone?: string) => React.ReactNode;
-}) {
+} & CalendarProps) {
   const [open, setOpen] = useState(false);
   const initDate = useMemo(() => new TZDate(value || new Date(), timezone), [value, timezone]);
 
+  const [month, setMonth] = useState<Date>(initDate);
   const [date, setDate] = useState<Date>(initDate);
   const [hour, setHour] = useState(initDate.getHours());
   const [minute, setMinute] = useState(date.getMinutes());
   const [second, setSecond] = useState(date.getSeconds());
 
-  const onMonthChanged = useCallback((month: number) => setDate(setMonth(date, month)), [date]);
-  const onYearChanged = useCallback((year: number) => setDate(setYear(date, year)), [date]);
+  const onMonthChanged = useCallback(
+    (m: number) => {
+      setMonth(setMonthFns(month, m));
+    },
+    [month]
+  );
+  const onYearChanged = useCallback(
+    (year: number) => {
+      setMonth(setYear(month, year));
+    },
+    [month]
+  );
   const onSumbit = useCallback(() => {
     let d = setHours(date, hour);
     d = setMinutes(d, minute);
@@ -80,6 +103,9 @@ export function DateTimePicker({
           mode="single"
           selected={date}
           onSelect={(d) => d && setDate(d)}
+          month={month}
+          endMonth={month}
+          onMonthChange={setMonth}
           captionLayout="dropdown"
           classNames={{
             dropdowns: 'flex w-full gap-2',
@@ -110,9 +136,10 @@ export function DateTimePicker({
           showOutsideDays={true}
           components={{
             MonthsDropdown: (props) =>
-              MonthSelect({ value: getMonth(date), options: props.options!, onChange: onMonthChanged }),
-            YearsDropdown: () => YearSelect({ value: getYear(date), onChange: onYearChanged }),
+              MonthSelect({ value: getMonth(month), options: props.options!, onChange: onMonthChanged }),
+            YearsDropdown: () => YearSelect({ value: getYear(month), onChange: onYearChanged }),
           }}
+          {...props}
         />
         <div className="flex flex-col gap-2">
           <TimePicker
@@ -287,10 +314,10 @@ function YearSelect({ value, onChange }: { value: number; onChange: (year: numbe
   const [open, setOpen] = useState(false);
 
   const onSubmit = useCallback(() => {
-    setOpen(false);
     if (year > 1970) {
       onChange(year);
     }
+    setOpen(false);
   }, [year, onChange]);
 
   useEffect(() => {
