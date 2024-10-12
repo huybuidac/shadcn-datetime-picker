@@ -474,9 +474,6 @@ function MonthSelect({
     }, 200);
     return () => clearTimeout(timeoutId);
   }, [open, month]);
-  useEffect(() => {
-    console.log(mOptions);
-  }, [mOptions]);
   return (
     <Select
       open={open}
