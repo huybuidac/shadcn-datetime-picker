@@ -4,6 +4,8 @@ import * as React from 'react';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { CalendarIcon } from '@radix-ui/react-icons';
 import {
+  endOfHour,
+  endOfMinute,
   format,
   getMonth,
   getYear,
@@ -12,10 +14,11 @@ import {
   setMonth as setMonthFns,
   setSeconds,
   setYear,
+  startOfHour,
+  startOfMinute,
 } from 'date-fns';
-import { tz } from '@date-fns/tz';
 import { CheckIcon, ChevronDownIcon, Clock } from 'lucide-react';
-import { DayPicker, TZDate, formatMonthDropdown } from 'react-day-picker';
+import { DayPicker, Matcher, TZDate, formatMonthDropdown } from 'react-day-picker';
 
 import { cn } from '@/lib/utils';
 import { Button, buttonVariants } from '@/components/ui/button';
@@ -33,11 +36,15 @@ export function DateTimePicker({
   onChange,
   timezone,
   renderTrigger,
+  min,
+  max,
   ...props
 }: {
   value: Date | undefined;
   onChange: (date: Date) => void;
   timezone?: string;
+  min?: Date;
+  max?: Date;
   renderTrigger?: (value: Date | undefined, timezone?: string) => React.ReactNode;
 } & CalendarProps) {
   const [open, setOpen] = useState(false);
@@ -48,6 +55,12 @@ export function DateTimePicker({
   const [hour, setHour] = useState(initDate.getHours());
   const [minute, setMinute] = useState(date.getMinutes());
   const [second, setSecond] = useState(date.getSeconds());
+
+  const endMonth = useMemo(() => {
+    return setYear(month, getYear(month) + 1);
+  }, [month]);
+  const minDate = useMemo(() => (min ? new TZDate(min, timezone) : undefined), [min, timezone]);
+  const maxDate = useMemo(() => (max ? new TZDate(max, timezone) : undefined), [max, timezone]);
 
   const onMonthChanged = useCallback(
     (m: number) => {
@@ -65,13 +78,14 @@ export function DateTimePicker({
     let d = setHours(date, hour);
     d = setMinutes(d, minute);
     d = setSeconds(d, second);
-    onChange(d);
+    onChange(new Date(d));
     setOpen(false);
   }, [date, hour, minute, second, onChange]);
 
   useEffect(() => {
     if (open) {
       setDate(initDate);
+      setMonth(initDate);
       setHour(initDate.getHours());
       setMinute(initDate.getMinutes());
       setSecond(initDate.getSeconds());
@@ -86,14 +100,10 @@ export function DateTimePicker({
         ) : (
           <Button
             variant={'outline'}
-            className={cn('flex justify-start font-normal', !date && 'text-muted-foreground')}
+            className={cn('flex w-full justify-start px-3 font-normal', !date && 'text-muted-foreground')}
           >
             <CalendarIcon className="mr-2 size-4" />
-            {value ? (
-              format(value, 'MMM d, yyyy, HH:mm:ss', timezone ? { in: tz(timezone) } : undefined)
-            ) : (
-              <span>Pick a date</span>
-            )}
+            {value ? format(initDate, 'MMM d, yyyy, HH:mm:ss') : <span>Pick a date</span>}
           </Button>
         )}
       </PopoverTrigger>
@@ -104,7 +114,8 @@ export function DateTimePicker({
           selected={date}
           onSelect={(d) => d && setDate(d)}
           month={month}
-          endMonth={month}
+          endMonth={endMonth}
+          disabled={[max ? { after: max } : null, min ? { before: min } : null].filter(Boolean) as Matcher[]}
           onMonthChange={setMonth}
           captionLayout="dropdown"
           classNames={{
@@ -136,8 +147,20 @@ export function DateTimePicker({
           showOutsideDays={true}
           components={{
             MonthsDropdown: (props) =>
-              MonthSelect({ value: getMonth(month), options: props.options!, onChange: onMonthChanged }),
-            YearsDropdown: () => YearSelect({ value: getYear(month), onChange: onYearChanged }),
+              MonthSelect({
+                selected: month,
+                minDate,
+                maxDate,
+                options: props.options!,
+                onChange: onMonthChanged,
+              }),
+            YearsDropdown: () =>
+              YearSelect({
+                value: getYear(month),
+                onChange: onYearChanged,
+                min: minDate ? getYear(minDate) : undefined,
+                max: maxDate ? getYear(maxDate) : undefined,
+              }),
           }}
           {...props}
         />
@@ -149,6 +172,9 @@ export function DateTimePicker({
             onHourChanged={setHour}
             onMinuteChanged={setMinute}
             onSecondChanged={setSecond}
+            date={date}
+            minDate={minDate}
+            maxDate={maxDate}
           />
           <div className="flex items-center justify-between">
             <span className="text-sm">Timezone: {timezone || 'Local'}</span>
@@ -165,6 +191,7 @@ export function DateTimePicker({
 interface TimeOption {
   value: number;
   label: string;
+  disabled: boolean;
 }
 
 function TimePicker({
@@ -174,6 +201,9 @@ function TimePicker({
   onHourChanged,
   onMinuteChanged,
   onSecondChanged,
+  date,
+  minDate,
+  maxDate,
 }: {
   hour: number;
   minute: number;
@@ -181,30 +211,58 @@ function TimePicker({
   onHourChanged: (hour: number) => void;
   onMinuteChanged: (minute: number) => void;
   onSecondChanged: (second: number) => void;
+  date: Date;
+  minDate?: Date;
+  maxDate?: Date;
 }) {
   const hours: TimeOption[] = useMemo(
     () =>
-      Array.from({ length: 24 }, (_, i) => ({
-        value: i,
-        label: i.toString().padStart(2, '0'),
-      })),
-    []
+      Array.from({ length: 24 }, (_, i) => {
+        let disabled = false;
+        const hDate = setHours(date, i);
+        const hStart = startOfHour(hDate);
+        const hEnd = endOfHour(hDate);
+        if (minDate && hEnd < minDate) disabled = true;
+        if (maxDate && hStart > maxDate) disabled = true;
+        return {
+          value: i,
+          label: i.toString().padStart(2, '0'),
+          disabled,
+        };
+      }),
+    [date, minDate, maxDate]
   );
   const minutes: TimeOption[] = useMemo(
     () =>
-      Array.from({ length: 60 }, (_, i) => ({
-        value: i,
-        label: i.toString().padStart(2, '0'),
-      })),
-    []
+      Array.from({ length: 60 }, (_, i) => {
+        let disabled = false;
+        const mDate = setMinutes(setHours(date, hour), i);
+        const mStart = startOfMinute(mDate);
+        const mEnd = endOfMinute(mDate);
+        if (minDate && mEnd < minDate) disabled = true;
+        if (maxDate && mStart > maxDate) disabled = true;
+        return {
+          value: i,
+          label: i.toString().padStart(2, '0'),
+          disabled,
+        };
+      }),
+    [date, hour, minDate, maxDate]
   );
   const seconds: TimeOption[] = useMemo(
     () =>
-      Array.from({ length: 60 }, (_, i) => ({
-        value: i,
-        label: i.toString().padStart(2, '0'),
-      })),
-    []
+      Array.from({ length: 60 }, (_, i) => {
+        let disabled = false;
+        const sDate = setSeconds(setMinutes(setHours(date, hour), minute), i);
+        if (minDate && sDate < minDate) disabled = true;
+        if (maxDate && sDate > maxDate) disabled = true;
+        return {
+          value: i,
+          label: i.toString().padStart(2, '0'),
+          disabled,
+        };
+      }),
+    [date, hour, minute, minDate, maxDate]
   );
   const display = useMemo(() => {
     return `${hour.toString().padStart(2, '0')}:${minute.toString().padStart(2, '0')}:${second
@@ -254,6 +312,7 @@ function TimePicker({
                   selected={v.value === hour}
                   onSelect={(v) => onHourChanged(v.value)}
                   className="h-8"
+                  disabled={v.disabled}
                 />
               ))}
             </div>
@@ -265,6 +324,7 @@ function TimePicker({
                   selected={v.value === minute}
                   onSelect={(v) => onMinuteChanged(v.value)}
                   className="h-8"
+                  disabled={v.disabled}
                 />
               ))}
             </div>
@@ -276,6 +336,7 @@ function TimePicker({
                   selected={v.value === second}
                   onSelect={(v) => onSecondChanged(v.value)}
                   className="h-8"
+                  disabled={v.disabled}
                 />
               ))}
             </div>
@@ -291,17 +352,20 @@ const TimeItem = ({
   selected,
   onSelect,
   className,
+  disabled,
 }: {
   option: TimeOption;
   selected: boolean;
   onSelect: (option: TimeOption) => void;
   className?: string;
+  disabled?: boolean;
 }) => {
   return (
     <Button
       variant="ghost"
       className={cn('flex justify-center px-1 pe-2 ps-1', className)}
       onClick={() => onSelect(option)}
+      disabled={disabled}
     >
       <div className="w-4">{selected && <CheckIcon className="my-auto size-4" />}</div>
       <span className="ms-2">{option.label}</span>
@@ -309,16 +373,27 @@ const TimeItem = ({
   );
 };
 
-function YearSelect({ value, onChange }: { value: number; onChange: (year: number) => void }): React.JSX.Element {
+function YearSelect({
+  value,
+  onChange,
+  min,
+  max,
+}: {
+  value: number;
+  onChange: (year: number) => void;
+  min?: number;
+  max?: number;
+}): React.JSX.Element {
   const [year, setYear] = useState(value);
   const [open, setOpen] = useState(false);
+  const [error, setError] = useState<string | undefined>(undefined);
 
   const onSubmit = useCallback(() => {
-    if (year > 1970) {
-      onChange(year);
-    }
+    if (min && year < min) return setError(`Minimum year is ${min}`);
+    if (max && year > max) return setError(`Maximum year is ${max}`);
+    onChange(year);
     setOpen(false);
-  }, [year, onChange]);
+  }, [year, onChange, min, max]);
 
   useEffect(() => {
     if (open) {
@@ -339,9 +414,18 @@ function YearSelect({ value, onChange }: { value: number; onChange: (year: numbe
         <div className="flex flex-col gap-2 p-2">
           <Label>Year</Label>
           <div className="flex gap-2">
-            <Input type="number" value={year} onChange={(e) => setYear(+e.target.value)} />
+            <Input
+              inputMode="numeric"
+              type="number"
+              value={year}
+              onChange={(e) => {
+                setError(undefined);
+                return setYear(+e.target.value);
+              }}
+            />
             <Button onClick={onSubmit}>Done</Button>
           </div>
+          {error && <Label className="text-sm font-medium text-destructive">{error}</Label>}
         </div>
       </DropdownMenuContent>
     </DropdownMenu>
@@ -349,31 +433,71 @@ function YearSelect({ value, onChange }: { value: number; onChange: (year: numbe
 }
 
 function MonthSelect({
-  value,
+  selected,
+  minDate,
+  maxDate,
   options,
   onChange,
 }: {
-  value: number;
+  selected: Date;
+  minDate?: Date;
+  maxDate?: Date;
   options: { value: number; label: string }[];
   onChange: (month: number) => void;
 }): React.JSX.Element {
+  const monthContainer = useRef<HTMLDivElement>(null);
+  const [open, setOpen] = useState(false);
+  const month = useMemo(() => getMonth(selected), [selected]);
+  const mOptions = useMemo(() => {
+    const min = minDate ? getMonth(minDate) : 0;
+    const max = maxDate ? getMonth(maxDate) : 11;
+    const year = getYear(selected);
+    const minYear = minDate ? getYear(minDate) : year - 1;
+    const maxYear = maxDate ? getYear(maxDate) : year + 1;
+
+    return options.map((option) => {
+      if (year < minYear || year > maxYear) return { ...option, disabled: true };
+      if (year === minYear && option.value < min) return { ...option, disabled: true };
+      if (year === maxYear && option.value > max) return { ...option, disabled: true };
+      return { ...option, disabled: false };
+    });
+  }, [selected, minDate, maxDate, options]);
+
+  useEffect(() => {
+    const timeoutId = setTimeout(() => {
+      if (open) {
+        monthContainer.current?.scrollTo({
+          top: monthContainer.current?.scrollHeight,
+          behavior: 'smooth',
+        });
+      }
+    }, 200);
+    return () => clearTimeout(timeoutId);
+  }, [open, month]);
+  useEffect(() => {
+    console.log(mOptions);
+  }, [mOptions]);
   return (
     <Select
-      value={value?.toString()}
+      open={open}
+      onOpenChange={setOpen}
+      value={month.toString()}
       onValueChange={(value) => {
         onChange(+value);
       }}
     >
       <SelectTrigger className="pr-1.5 focus:ring-0">
-        <SelectValue className="grow">{formatMonthDropdown(value)}</SelectValue>
+        <SelectValue className="grow">{formatMonthDropdown(month)}</SelectValue>
       </SelectTrigger>
       <SelectContent position="popper">
         <ScrollArea className="h-80">
-          {options.map((option) => (
-            <SelectItem key={`${option.value}`} value={option.value.toString()}>
-              {option.label}
-            </SelectItem>
-          ))}
+          <div ref={monthContainer}>
+            {mOptions.map((option) => (
+              <SelectItem key={`${option.value}`} value={option.value.toString()} disabled={option.disabled}>
+                {option.label}
+              </SelectItem>
+            ))}
+          </div>
         </ScrollArea>
       </SelectContent>
     </Select>

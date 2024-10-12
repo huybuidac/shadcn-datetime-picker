@@ -60,6 +60,18 @@ export default function Home() {
 }
 ```
 
+#### 4. With min and max date
+```tsx
+import { DateTimePicker } from '@/components/datetime-picker';
+
+export default function Home() {
+  const [date, setDate] = useState<Date | undefined>(undefined);
+  const minDate = useMemo(() => subHours(new Date(), 2), []);
+  const maxDate = useMemo(() => addMonths(new Date(), 2), []);
+  return <DateTimePicker value={date} onChange={setDate} min={minDate} max={maxDate} />;
+}
+```
+
 ### Contributing
 
 We welcome contributions! Please feel free to submit a pull request or open an issue for any suggestions or improvements.
