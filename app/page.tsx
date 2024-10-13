@@ -8,6 +8,7 @@ import {
   addMonths,
 } from 'date-fns';
 import { Label } from '@/components/ui/label';
+import { SimpleTimePicker } from '@/components/simple-time-picker';
 
 export default function Home() {
   const [date, setDate] = useState<Date | undefined>(undefined);
@@ -15,6 +16,10 @@ export default function Home() {
   const [date2, setDate2] = useState<Date | undefined>(new Date());
   const minDate = useMemo(() => subHours(new Date(), 2), []);
   const maxDate = useMemo(() => addMonths(new Date(), 2), []);
+
+  const [hour, setHour] = useState<number>(13);
+  const [minute, setMinute] = useState<number>(24);
+  const [second, setSecond] = useState<number>(21);
 
   return (
     <div className="grid grid-rows-[20px_1fr_20px]  justify-items-center min-h-screen p-8 pb-20 gap-16 sm:p-20 font-[family-name:var(--font-geist-sans)]">
@@ -42,6 +47,8 @@ export default function Home() {
           <Label>Min date: {minDate.toLocaleString()}</Label>
           <Label>Max date: {maxDate.toLocaleString()}</Label>
           <DateTimePicker value={date2} onChange={setDate2} min={minDate} max={maxDate} />
+          <h2 className="text-xl font-bold mt-10">Simple Time Picker</h2>
+          <SimpleTimePicker hour={hour} minute={minute} second={second} onHourChanged={setHour} onMinuteChanged={setMinute} onSecondChanged={setSecond} />
         </div>
       </main>
     </div>
