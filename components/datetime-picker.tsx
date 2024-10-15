@@ -7,6 +7,7 @@ import {
   endOfHour,
   endOfMinute,
   format,
+  parse,
   getMonth,
   getYear,
   setHours,
@@ -31,6 +32,9 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 
 export type CalendarProps = Omit<React.ComponentProps<typeof DayPicker>, 'mode'>;
 
+const AM_VALUE = 0;
+const PM_VALUE = 1;
+
 export function DateTimePicker({
   value,
   onChange,
@@ -38,6 +42,7 @@ export function DateTimePicker({
   renderTrigger,
   min,
   max,
+  use12HourFormat = true,
   ...props
 }: {
   value: Date | undefined;
@@ -45,16 +50,16 @@ export function DateTimePicker({
   timezone?: string;
   min?: Date;
   max?: Date;
-  renderTrigger?: (value: Date | undefined, timezone?: string) => React.ReactNode;
+  use12HourFormat?: boolean;
+  renderTrigger?: (value: Date | undefined, preview: boolean, timezone?: string) => React.ReactNode;
 } & CalendarProps) {
   const [open, setOpen] = useState(false);
   const initDate = useMemo(() => new TZDate(value || new Date(), timezone), [value, timezone]);
 
+  // console.log('initDate=', (value as any).timezone, timezone, initDate, value)
+
   const [month, setMonth] = useState<Date>(initDate);
   const [date, setDate] = useState<Date>(initDate);
-  const [hour, setHour] = useState(initDate.getHours());
-  const [minute, setMinute] = useState(date.getMinutes());
-  const [second, setSecond] = useState(date.getSeconds());
 
   const endMonth = useMemo(() => {
     return setYear(month, getYear(month) + 1);
@@ -62,6 +67,13 @@ export function DateTimePicker({
   const minDate = useMemo(() => (min ? new TZDate(min, timezone) : undefined), [min, timezone]);
   const maxDate = useMemo(() => (max ? new TZDate(max, timezone) : undefined), [max, timezone]);
 
+  const onDayChanged = useCallback(
+    (d: Date) => {
+      d.setHours(date.getHours(), date.getMinutes(), date.getSeconds());
+      setDate(d);
+    },
+    [setDate, setMonth]
+  );
   const onMonthChanged = useCallback(
     (m: number) => {
       setMonth(setMonthFns(month, m));
@@ -75,35 +87,34 @@ export function DateTimePicker({
     [month]
   );
   const onSumbit = useCallback(() => {
-    let d = setHours(date, hour);
-    d = setMinutes(d, minute);
-    d = setSeconds(d, second);
-    onChange(new Date(d));
+    onChange(new Date(date));
     setOpen(false);
-  }, [date, hour, minute, second, onChange]);
+  }, [date, onChange]);
 
   useEffect(() => {
     if (open) {
       setDate(initDate);
       setMonth(initDate);
-      setHour(initDate.getHours());
-      setMinute(initDate.getMinutes());
-      setSecond(initDate.getSeconds());
     }
   }, [open, initDate]);
+
+  const displayValue = useMemo(() => {
+    if (!value) return value;
+    return open ? date : initDate;
+  }, [date, value, open]);
 
   return (
     <Popover open={open} onOpenChange={setOpen}>
       <PopoverTrigger asChild>
         {renderTrigger ? (
-          renderTrigger(value, timezone)
+          renderTrigger(displayValue, open, timezone)
         ) : (
           <Button
             variant={'outline'}
-            className={cn('flex w-full justify-start px-3 font-normal', !date && 'text-muted-foreground')}
+            className={cn('flex w-full justify-start px-3 font-normal', !displayValue && 'text-muted-foreground')}
           >
             <CalendarIcon className="mr-2 size-4" />
-            {value ? format(initDate, 'MMM d, yyyy, HH:mm:ss') : <span>Pick a date</span>}
+            {displayValue ? format(displayValue, 'MMM d, yyyy, HH:mm:ss') : <span>Pick a date</span>}
           </Button>
         )}
       </PopoverTrigger>
@@ -112,7 +123,7 @@ export function DateTimePicker({
           timeZone={timezone}
           mode="single"
           selected={date}
-          onSelect={(d) => d && setDate(d)}
+          onSelect={(d) => d && onDayChanged(d)}
           month={month}
           endMonth={endMonth}
           disabled={[max ? { after: max } : null, min ? { before: min } : null].filter(Boolean) as Matcher[]}
@@ -165,17 +176,7 @@ export function DateTimePicker({
           {...props}
         />
         <div className="flex flex-col gap-2">
-          <TimePicker
-            hour={hour}
-            minute={minute}
-            second={second}
-            onHourChanged={setHour}
-            onMinuteChanged={setMinute}
-            onSecondChanged={setSecond}
-            date={date}
-            minDate={minDate}
-            maxDate={maxDate}
-          />
+          <TimePicker date={date} onChange={setDate} use12HourFormat={use12HourFormat} minDate={minDate} maxDate={maxDate} />
           <div className="flex items-center justify-between">
             <span className="text-sm">Timezone: {timezone || 'Local'}</span>
             <Button className="ms-2 h-7 px-2" onClick={onSumbit}>
@@ -195,42 +196,70 @@ interface TimeOption {
 }
 
 function TimePicker({
-  hour,
-  minute,
-  second,
-  onHourChanged,
-  onMinuteChanged,
-  onSecondChanged,
   date,
+  onChange,
+  use12HourFormat,
   minDate,
   maxDate,
 }: {
-  hour: number;
-  minute: number;
-  second: number;
-  onHourChanged: (hour: number) => void;
-  onMinuteChanged: (minute: number) => void;
-  onSecondChanged: (second: number) => void;
+  use12HourFormat?: boolean;
   date: Date;
+  onChange: (date: Date) => void;
   minDate?: Date;
   maxDate?: Date;
 }) {
+  // hours24h = HH
+  // hours12h = hh
+  // console.log({
+  //   date,
+  //   'a': format(date, 'a'),
+  //   'hh': format(date, 'zzzz'),
+  //   'yyyy-MM-dd hh:mm:ss.SSS a zzzz': format(date, 'yyyy-MM-dd hh:mm:ss.SSS a xxxx'),
+  // })
+  // const timezone = useMemo(() => format(date, 'zzzz'), [date]);
+  const formatStr = useMemo(() => use12HourFormat ? 'yyyy-MM-dd hh:mm:ss.SSS a xxxx' : 'yyyy-MM-dd HH:mm:ss.SSS xxxx', [use12HourFormat]);
+  const [ampm, setAmpm] = useState(format(date, 'a') === 'AM' ? AM_VALUE : PM_VALUE);
+  const [hour, setHour] = useState(use12HourFormat ? +format(date, 'hh') : date.getHours());
+  const [minute, setMinute] = useState(date.getMinutes());
+  const [second, setSecond] = useState(date.getSeconds());
+
+  useEffect(() => {
+    const dateStrRaw = format(date, formatStr);
+    // yyyy-MM-dd hh:mm:ss.SSS a zzzz
+    // 2024-10-14 01:20:07.524 AM GMT+00:00
+    let dateStr = dateStrRaw.slice(0, 11) + hour.toString().padStart(2, '0') + dateStrRaw.slice(13)
+    dateStr = dateStr.slice(0, 14) + minute.toString().padStart(2, '0') + dateStr.slice(16)
+    dateStr = dateStr.slice(0, 17) + second.toString().padStart(2, '0') + dateStr.slice(19)
+    dateStr = dateStr.slice(0, 24) + (ampm == AM_VALUE ? 'AM' : 'PM') + dateStr.slice(26)
+    console.log({
+      dateStrRaw,
+      dateStr,
+      formatStr,
+    })
+    const result = parse(dateStr, formatStr, date);
+    onChange(result);
+  }, [hour, minute, second, ampm, use12HourFormat]);
+
   const hours: TimeOption[] = useMemo(
     () =>
-      Array.from({ length: 24 }, (_, i) => {
+      Array.from({ length: use12HourFormat ? 12 : 24 }, (_, i) => {
         let disabled = false;
-        const hDate = setHours(date, i);
+        let hourValue = i;
+        if (use12HourFormat) {
+          hourValue = i === 0 ? 12 : i;
+        }
+        const hDate = setHours(date, hourValue);
         const hStart = startOfHour(hDate);
         const hEnd = endOfHour(hDate);
         if (minDate && hEnd < minDate) disabled = true;
         if (maxDate && hStart > maxDate) disabled = true;
         return {
-          value: i,
-          label: i.toString().padStart(2, '0'),
+          value: hourValue,
+          label: hourValue.toString().padStart(2, '0'),
           disabled,
         };
       }),
-    [date, minDate, maxDate]
+    [date, minDate, maxDate, use12HourFormat]
   );
   const minutes: TimeOption[] = useMemo(
     () =>
@@ -264,6 +293,12 @@ function TimePicker({
       }),
     [date, hour, minute, minDate, maxDate]
   );
+  const ampmOptions = useMemo(() => {
+    return [
+      { value: AM_VALUE, label: 'AM', disabled: false },
+      { value: PM_VALUE, label: 'PM', disabled: false },
+    ]
+  }, [hour, use12HourFormat]);
   const display = useMemo(() => {
     return `${hour.toString().padStart(2, '0')}:${minute.toString().padStart(2, '0')}:${second
       .toString()
@@ -298,10 +333,11 @@ function TimePicker({
       </PopoverTrigger>
       <PopoverContent className="p-0" side="top">
         <div className="flex-col gap-2 p-2">
-          <div className="grid grid-cols-3">
+          <div className={`grid ${use12HourFormat ? 'grid-cols-4' : 'grid-cols-3'}`}>
             <Label className="pe-5 text-right font-bold">Hour</Label>
             <Label className="pe-5 text-right font-bold">Minute</Label>
             <Label className="pe-5 text-right font-bold">Second</Label>
+            {use12HourFormat && <Label className="pe-5 text-right font-bold">AM/PM</Label>}
           </div>
           <div className="flex h-[220px] grow">
             <div className="flex grow flex-col items-stretch overflow-y-auto pe-2" ref={hourContainer}>
@@ -310,7 +346,7 @@ function TimePicker({
                   key={v.value}
                   option={v}
                   selected={v.value === hour}
-                  onSelect={(v) => onHourChanged(v.value)}
+                  onSelect={(v) => setHour(v.value)}
                   className="h-8"
                   disabled={v.disabled}
                 />
@@ -322,7 +358,7 @@ function TimePicker({
                   key={v.value}
                   option={v}
                   selected={v.value === minute}
-                  onSelect={(v) => onMinuteChanged(v.value)}
+                  onSelect={(v) => setMinute(v.value)}
                   className="h-8"
                   disabled={v.disabled}
                 />
@@ -334,12 +370,26 @@ function TimePicker({
                   key={v.value}
                   option={v}
                   selected={v.value === second}
-                  onSelect={(v) => onSecondChanged(v.value)}
+                  onSelect={(v) => setSecond(v.value)}
                   className="h-8"
                   disabled={v.disabled}
                 />
               ))}
             </div>
+            {use12HourFormat && (
+              <div className="flex grow flex-col items-stretch overflow-y-auto pe-2">
+                {ampmOptions.map((v) => (
+                  <TimeItem
+                    key={v.value}
+                    option={v}
+                    selected={v.value === ampm}
+                    onSelect={(v) => setAmpm(v.value)}
+                    className="h-8"
+                    disabled={v.disabled}
+                  />
+                ))}
+              </div>
+            )}
           </div>
         </div>
       </PopoverContent>
