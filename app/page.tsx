@@ -17,9 +17,7 @@ export default function Home() {
   const minDate = useMemo(() => subHours(new Date(), 2), []);
   const maxDate = useMemo(() => addMonths(new Date(), 2), []);
 
-  const [hour, setHour] = useState<number>(13);
-  const [minute, setMinute] = useState<number>(24);
-  const [second, setSecond] = useState<number>(21);
+  const [time, setTime] = useState<Date>(new Date());
 
   return (
     <div className="grid grid-rows-[20px_1fr_20px]  justify-items-center min-h-screen p-8 pb-20 gap-16 sm:p-20 font-[family-name:var(--font-geist-sans)]">
@@ -34,7 +32,7 @@ export default function Home() {
             View on GitHub
           </a>
           <h2 className="text-xl font-bold">Datetime Picker</h2>
-          <DateTimePicker value={date} onChange={setDate} />
+          <DateTimePicker use12HourFormat={false} value={date} onChange={setDate} />
           <h2 className="text-xl font-bold mt-10">With timezone = UTC</h2>
           <DateTimePicker value={date} onChange={setDate} timezone="UTC" />
           <h2 className="text-xl font-bold mt-10">Custom trigger</h2>
@@ -48,7 +46,7 @@ export default function Home() {
           <Label>Max date: {maxDate.toLocaleString()}</Label>
           <DateTimePicker value={date2} onChange={setDate2} min={minDate} max={maxDate} />
           <h2 className="text-xl font-bold mt-10">Simple Time Picker</h2>
-          <SimpleTimePicker hour={hour} minute={minute} second={second} onHourChanged={setHour} onMinuteChanged={setMinute} onSecondChanged={setSecond} />
+          <SimpleTimePicker use12HourFormat={true} value={time} onChange={setTime} />
         </div>
       </main>
     </div>
