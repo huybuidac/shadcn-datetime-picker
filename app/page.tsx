@@ -31,21 +31,23 @@ export default function Home() {
           >
             View on GitHub
           </a>
-          <h2 className="text-xl font-bold">Datetime Picker</h2>
+          <h2 className="text-xl font-bold mt-4">Datetime Picker</h2>
           <DateTimePicker use12HourFormat={false} value={date} onChange={setDate} />
-          <h2 className="text-xl font-bold mt-10">With timezone = UTC</h2>
+          <h2 className="text-xl font-bold  mt-4">With timezone = UTC</h2>
           <DateTimePicker value={date} onChange={setDate} timezone="UTC" />
-          <h2 className="text-xl font-bold mt-10">Custom trigger</h2>
+          <h2 className="text-xl font-bold  mt-4">Disabled</h2>
+          <DateTimePicker use12HourFormat={false} value={date} onChange={setDate} disabled={true} />
+          <h2 className="text-xl font-bold  mt-4">Custom trigger</h2>
           <DateTimePicker
             value={date}
             onChange={setDate}
-            renderTrigger={(value) => <Button>{value?.toLocaleString() || 'Select a date'}</Button>}
+            renderTrigger={({value}) => <Button>{value?.toLocaleString() || 'Select a date'}</Button>}
           />
-          <h2 className="text-xl font-bold mt-10">With min and max date</h2>
+          <h2 className="text-xl font-bold  mt-4">With min and max date</h2>
           <Label>Min date: {minDate.toLocaleString()}</Label>
           <Label>Max date: {maxDate.toLocaleString()}</Label>
           <DateTimePicker value={date2} onChange={setDate2} min={minDate} max={maxDate} />
-          <h2 className="text-xl font-bold mt-10">Simple Time Picker</h2>
+          <h2 className="text-xl font-bold  mt-4">Simple Time Picker</h2>
           <SimpleTimePicker use12HourFormat={true} value={time} onChange={setTime} />
         </div>
       </main>

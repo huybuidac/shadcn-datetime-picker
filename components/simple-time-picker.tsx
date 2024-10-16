@@ -29,12 +29,14 @@ export function SimpleTimePicker({
   use12HourFormat,
   minDate,
   maxDate,
+  disabled,
 }: {
   use12HourFormat?: boolean;
   value: Date;
   onChange: (date: Date) => void;
   minDate?: Date;
   maxDate?: Date;
+  disabled?: boolean;
 }) {
   // hours24h = HH
   // hours12h = hh
@@ -157,7 +159,7 @@ export function SimpleTimePicker({
   return (
     <Popover open={open} onOpenChange={setOpen}>
       <PopoverTrigger asChild>
-        <Button variant="outline" role="combobox" aria-expanded={open} className="justify-between">
+        <Button disabled={disabled} variant="outline" role="combobox" aria-expanded={open} className="justify-between">
           <Clock className="mr-2 size-4" />
           {display}
           <ChevronDownIcon className="ml-2 size-4 shrink-0 opacity-50" />

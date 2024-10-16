@@ -35,6 +35,14 @@ export type CalendarProps = Omit<React.ComponentProps<typeof DayPicker>, 'mode'>
 const AM_VALUE = 0;
 const PM_VALUE = 1;
 
+export type DateTimeRenderTriggerProps = {
+  value: Date | undefined;
+  open: boolean;
+  timezone?: string;
+  disabled?: boolean;
+  use12HourFormat?: boolean;
+};
+
 export function DateTimePicker({
   value,
   onChange,
@@ -43,6 +51,7 @@ export function DateTimePicker({
   min,
   max,
   use12HourFormat = true,
+  disabled,
   ...props
 }: {
   value: Date | undefined;
@@ -50,8 +59,9 @@ export function DateTimePicker({
   timezone?: string;
   min?: Date;
   max?: Date;
+  disabled?: boolean;
   use12HourFormat?: boolean;
-  renderTrigger?: (value: Date | undefined, preview: boolean, timezone?: string) => React.ReactNode;
+  renderTrigger?: (props: DateTimeRenderTriggerProps) => React.ReactNode;
 } & CalendarProps) {
   const [open, setOpen] = useState(false);
   const initDate = useMemo(() => new TZDate(value || new Date(), timezone), [value, timezone]);
@@ -105,9 +115,10 @@ export function DateTimePicker({
     <Popover open={open} onOpenChange={setOpen}>
       <PopoverTrigger asChild>
         {renderTrigger ? (
-          renderTrigger(displayValue, open, timezone)
+          renderTrigger({ value: displayValue, open, timezone, disabled, use12HourFormat })
         ) : (
           <Button
+            disabled={disabled}
             variant={'outline'}
             className={cn('flex w-full justify-start px-3 font-normal', !displayValue && 'text-muted-foreground')}
           >
