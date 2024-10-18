@@ -109,7 +109,7 @@ export function DateTimePicker({
   }, [open, initDate]);
 
   const displayValue = useMemo(() => {
-    if (!value) return value;
+    if (!open && !value) return value;
     return open ? date : initDate;
   }, [date, value, open]);
 
