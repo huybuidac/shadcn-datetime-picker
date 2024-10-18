@@ -33,6 +33,8 @@ export default function Home() {
           </a>
           <h2 className="text-xl font-bold mt-4">Datetime Picker</h2>
           <DateTimePicker use12HourFormat={false} value={date} onChange={setDate} />
+          <h2 className="text-xl font-bold mt-4">Date Picker</h2>
+          <DateTimePicker use12HourFormat={false} value={date} onChange={setDate} showTime={false} />
           <h2 className="text-xl font-bold  mt-4">With timezone = UTC</h2>
           <DateTimePicker value={date} onChange={setDate} timezone="UTC" />
           <h2 className="text-xl font-bold  mt-4">Disabled</h2>

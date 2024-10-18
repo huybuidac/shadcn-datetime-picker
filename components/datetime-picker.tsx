@@ -46,20 +46,22 @@ export type DateTimeRenderTriggerProps = {
 export function DateTimePicker({
   value,
   onChange,
-  timezone,
   renderTrigger,
   min,
   max,
+  timezone,
+  showTime = true,
   use12HourFormat = true,
   disabled,
   ...props
 }: {
   value: Date | undefined;
   onChange: (date: Date) => void;
-  timezone?: string;
   min?: Date;
   max?: Date;
+  timezone?: string;
   disabled?: boolean;
+  showTime?: boolean;
   use12HourFormat?: boolean;
   renderTrigger?: (props: DateTimeRenderTriggerProps) => React.ReactNode;
 } & CalendarProps) {
@@ -111,6 +113,11 @@ export function DateTimePicker({
     return open ? date : initDate;
   }, [date, value, open]);
 
+  const dislayFormat = useMemo(() => {
+    if (!displayValue) return 'Pick a date';
+    return format(displayValue, `${showTime ? 'MMM' : 'MMMM' } d, yyyy${showTime ? (use12HourFormat ? ', hh:mm:ss a' : ', HH:mm:ss') : ''}`);
+  }, [displayValue, showTime, use12HourFormat]);
+
   return (
     <Popover open={open} onOpenChange={setOpen}>
       <PopoverTrigger asChild>
@@ -123,11 +130,7 @@ export function DateTimePicker({
             className={cn('flex w-full justify-start px-3 font-normal', !displayValue && 'text-muted-foreground')}
           >
             <CalendarIcon className="mr-2 size-4" />
-            {displayValue ? (
-              format(displayValue, `MMM d, yyyy, ${use12HourFormat ? 'hh:mm:ss a' : 'HH:mm:ss'}`)
-            ) : (
-              <span>Pick a date</span>
-            )}
+            {dislayFormat}
           </Button>
         )}
       </PopoverTrigger>
@@ -189,18 +192,25 @@ export function DateTimePicker({
           {...props}
         />
         <div className="flex flex-col gap-2">
-          <TimePicker
-            value={date}
-            onChange={setDate}
-            use12HourFormat={use12HourFormat}
-            minDate={minDate}
-            maxDate={maxDate}
-          />
-          <div className="flex items-center justify-between">
-            <span className="text-sm">Timezone: {timezone || 'Local'}</span>
+          {showTime && (
+            <TimePicker
+              value={date}
+              onChange={setDate}
+              use12HourFormat={use12HourFormat}
+              minDate={minDate}
+              maxDate={maxDate}
+            />
+          )}
+          <div className="flex flex-row-reverse items-center justify-between">
             <Button className="ms-2 h-7 px-2" onClick={onSumbit}>
               Done
             </Button>
+            {timezone && (
+              <div className="text-sm">
+                <span>Timezone:</span>
+                <span className="font-semibold ms-1">{timezone}</span>
+              </div>
+            )}
           </div>
         </div>
       </PopoverContent>
