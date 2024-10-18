@@ -3,19 +3,16 @@
 import { DateTimePicker } from '@/components/datetime-picker';
 import { Button } from '@/components/ui/button';
 import { useMemo, useState } from 'react';
-import {
-  subHours,
-  addMonths,
-} from 'date-fns';
+import { subYears, addYears } from 'date-fns';
 import { Label } from '@/components/ui/label';
 import { SimpleTimePicker } from '@/components/simple-time-picker';
-
+import { format } from 'date-fns';
 export default function Home() {
   const [date, setDate] = useState<Date | undefined>(undefined);
 
   const [date2, setDate2] = useState<Date | undefined>(new Date());
-  const minDate = useMemo(() => subHours(new Date(), 2), []);
-  const maxDate = useMemo(() => addMonths(new Date(), 2), []);
+  const minDate = useMemo(() => subYears(new Date(), 2), []);
+  const maxDate = useMemo(() => addYears(new Date(), 2), []);
 
   const [time, setTime] = useState<Date>(new Date());
 
@@ -43,11 +40,11 @@ export default function Home() {
           <DateTimePicker
             value={date}
             onChange={setDate}
-            renderTrigger={({value}) => <Button>{value?.toLocaleString() || 'Select a date'}</Button>}
+            renderTrigger={({ value }) => <Button>{value?.toLocaleString() || 'Select a date'}</Button>}
           />
           <h2 className="text-xl font-bold  mt-4">With min and max date</h2>
-          <Label>Min date: {minDate.toLocaleString()}</Label>
-          <Label>Max date: {maxDate.toLocaleString()}</Label>
+          <Label>Min date: {format(minDate, 'MMM d, yyyy HH:mm:ss a')}</Label>
+          <Label>Max date: {format(maxDate, 'MMM d, yyyy HH:mm:ss a')}</Label>
           <DateTimePicker value={date2} onChange={setDate2} min={minDate} max={maxDate} />
           <h2 className="text-xl font-bold  mt-4">Simple Time Picker</h2>
           <SimpleTimePicker use12HourFormat={true} value={time} onChange={setTime} />
@@ -63,4 +60,3 @@ function addDays(arg0: Date, arg1: number): any {
 function subDays(arg0: Date, arg1: number): any {
   throw new Error('Function not implemented.');
 }
-

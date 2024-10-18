@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { cn } from '@/lib/utils';
 import { Clock, ChevronDownIcon, CheckIcon } from 'lucide-react';
@@ -18,6 +18,7 @@ import {
 interface SimpleTimeOption {
   value: any;
   label: string;
+  disabled?: boolean;
 }
 
 const AM_VALUE = 0;
@@ -50,19 +51,15 @@ export function SimpleTimePicker({
   const [second, setSecond] = useState(value.getSeconds());
 
   useEffect(() => {
-    if (use12HourFormat) {
-      const dateStrRaw = format(value, formatStr);
-      // yyyy-MM-dd hh:mm:ss.SSS a zzzz
-      // 2024-10-14 01:20:07.524 AM GMT+00:00
-      let dateStr = dateStrRaw.slice(0, 11) + hour.toString().padStart(2, '0') + dateStrRaw.slice(13);
-      dateStr = dateStr.slice(0, 14) + minute.toString().padStart(2, '0') + dateStr.slice(16);
-      dateStr = dateStr.slice(0, 17) + second.toString().padStart(2, '0') + dateStr.slice(19);
-      dateStr = dateStr.slice(0, 24) + (ampm == AM_VALUE ? 'AM' : 'PM') + dateStr.slice(26);
-      onChange(parse(dateStr, formatStr, value));
-    } else {
-      onChange(setHours(setMinutes(setSeconds(value, second), minute), hour));
-    }
+    onChange(buildTime({ use12HourFormat, value, formatStr, hour, minute, second, ampm }));
   }, [hour, minute, second, ampm, use12HourFormat]);
+
+  const _hourIn24h = useMemo(() => {
+    if (use12HourFormat) {
+      return ampm === AM_VALUE ? (hour == 0 ? 12 : hour) : hour == 12 ? 0 : hour + 12;
+    }
+    return hour;
+  }, [hour, use12HourFormat, ampm]);
 
   const hours: SimpleTimeOption[] = useMemo(
     () =>
@@ -72,7 +69,10 @@ export function SimpleTimePicker({
         if (use12HourFormat) {
           hourValue = i === 0 ? 12 : i;
         }
-        const hDate = setHours(value, hourValue);
+        const hDate = setHours(
+          value,
+          ampm === AM_VALUE ? (hourValue == 0 ? 12 : hourValue) : hourValue == 12 ? 0 : hourValue + 12
+        );
         const hStart = startOfHour(hDate);
         const hEnd = endOfHour(hDate);
         if (minDate && hEnd < minDate) disabled = true;
@@ -89,7 +89,7 @@ export function SimpleTimePicker({
     () =>
       Array.from({ length: 60 }, (_, i) => {
         let disabled = false;
-        const mDate = setMinutes(setHours(value, hour), i);
+        const mDate = setMinutes(setHours(value, _hourIn24h), i);
         const mStart = startOfMinute(mDate);
         const mEnd = endOfMinute(mDate);
         if (minDate && mEnd < minDate) disabled = true;
@@ -100,13 +100,13 @@ export function SimpleTimePicker({
           disabled,
         };
       }),
-    [value, hour, minDate, maxDate]
+    [value, hour, minDate, maxDate, _hourIn24h]
   );
   const seconds: SimpleTimeOption[] = useMemo(
     () =>
       Array.from({ length: 60 }, (_, i) => {
         let disabled = false;
-        const sDate = setSeconds(setMinutes(setHours(value, hour), minute), i);
+        const sDate = setSeconds(setMinutes(setHours(value, _hourIn24h), minute), i);
         if (minDate && sDate < minDate) disabled = true;
         if (maxDate && sDate > maxDate) disabled = true;
         return {
@@ -115,7 +115,7 @@ export function SimpleTimePicker({
           disabled,
         };
       }),
-    [value, hour, minute, minDate, maxDate]
+    [value, hour, minute, minDate, maxDate, _hourIn24h]
   );
   const ampmOptions = useMemo(() => {
     return [
@@ -126,31 +126,52 @@ export function SimpleTimePicker({
 
   const [open, setOpen] = useState(false);
 
-  const hourContainer = useRef<HTMLDivElement>(null);
-  const minuteContainer = useRef<HTMLDivElement>(null);
-  const secondContainer = useRef<HTMLDivElement>(null);
+  const hourRef = useRef<HTMLDivElement>(null);
+  const minuteRef = useRef<HTMLDivElement>(null);
+  const secondRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     const timeoutId = setTimeout(() => {
       if (open) {
-        const hourIndex = hours.findIndex((v) => v.value === hour);
-        hourContainer.current?.scrollTo({
-          top: (hourContainer.current?.scrollHeight * hourIndex) / hours.length,
-          behavior: 'smooth',
-        });
-        minuteContainer.current?.scrollTo({
-          top: (minuteContainer.current?.scrollHeight * minute) / minutes.length,
-          behavior: 'smooth',
-        });
-        secondContainer.current?.scrollTo({
-          top: (secondContainer.current?.scrollHeight * second) / seconds.length,
-          behavior: 'smooth',
-        });
+        hourRef.current?.scrollIntoView({ behavior: 'auto' });
+        minuteRef.current?.scrollIntoView({ behavior: 'auto' });
+        secondRef.current?.scrollIntoView({ behavior: 'auto' });
       }
-    }, 200);
+    }, 1);
     return () => clearTimeout(timeoutId);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open]);
+  const onHourChange = useCallback(
+    (v: SimpleTimeOption) => {
+      if (minDate) {
+        let newTime = buildTime({ use12HourFormat, value, formatStr, hour: v.value, minute, second, ampm });
+        if (newTime < minDate) {
+          newTime = setSeconds(newTime, minDate.getSeconds());
+          setSecond(newTime.getSeconds());
+          if (newTime < minDate) {
+            newTime = setMinutes(newTime, minDate.getMinutes());
+            setMinute(newTime.getMinutes());
+          }
+        }
+      }
+      setHour(v.value);
+    },
+    [setHour, use12HourFormat, value, formatStr, minute, second, ampm]
+  );
+
+  const onMinuteChange = useCallback(
+    (v: SimpleTimeOption) => {
+      if (minDate) {
+        let newTime = buildTime({ use12HourFormat, value, formatStr, hour: v.value, minute, second, ampm });
+        if (newTime < minDate) {
+          newTime = setSeconds(newTime, minDate.getSeconds());
+          setSecond(newTime.getSeconds());
+        }
+      }
+      setMinute(v.value);
+    },
+    [setMinute, use12HourFormat, value, formatStr, hour, second, ampm]
+  );
 
   const display = useMemo(() => {
     return format(value, use12HourFormat ? 'hh:mm:ss a' : 'HH:mm:ss');
@@ -167,44 +188,31 @@ export function SimpleTimePicker({
       </PopoverTrigger>
       <PopoverContent className="p-0" side="top">
         <div className="flex-col gap-2 p-2">
-          {/* <div className={`grid ${use12HourFormat ? 'grid-cols-4' : 'grid-cols-3'}`}>
-            <Label className="pe-5 text-right font-bold">Hour</Label>
-            <Label className="pe-5 text-right font-bold">Minute</Label>
-            <Label className="pe-5 text-right font-bold">Second</Label>
-            {use12HourFormat && <Label className="pe-5 text-right font-bold">AM/PM</Label>}
-          </div> */}
-          <div className="flex h-[220px] grow">
-            <div className="flex grow flex-col items-stretch overflow-y-auto pe-2" ref={hourContainer}>
+          <div className="flex h-56 grow">
+            <div className="flex grow flex-col items-stretch overflow-y-auto pe-2 pb-48">
               {hours.map((v) => (
-                <TimeItem
-                  key={v.value}
-                  option={v}
-                  selected={v.value === hour}
-                  onSelect={(v) => setHour(v.value)}
-                  className="h-8"
-                />
+                <div ref={v.value === hour ? hourRef : undefined} key={v.value}>
+                  <TimeItem option={v} selected={v.value === hour} onSelect={onHourChange} className="h-8" />
+                </div>
               ))}
             </div>
-            <div className="flex grow flex-col items-stretch overflow-y-auto pe-2" ref={minuteContainer}>
+            <div className="flex grow flex-col items-stretch overflow-y-auto pe-2 pb-48">
               {minutes.map((v) => (
-                <TimeItem
-                  key={v.value}
-                  option={v}
-                  selected={v.value === minute}
-                  onSelect={(v) => setMinute(v.value)}
-                  className="h-8"
-                />
+                <div ref={v.value === minute ? minuteRef : undefined} key={v.value}>
+                  <TimeItem option={v} selected={v.value === minute} onSelect={onMinuteChange} className="h-8" />
+                </div>
               ))}
             </div>
-            <div className="flex grow flex-col items-stretch overflow-y-auto pe-2" ref={secondContainer}>
+            <div className="flex grow flex-col items-stretch overflow-y-auto pe-2 pb-48">
               {seconds.map((v) => (
-                <TimeItem
-                  key={v.value}
-                  option={v}
-                  selected={v.value === second}
-                  onSelect={(v) => setSecond(v.value)}
-                  className="h-8"
-                />
+                <div ref={v.value === second ? secondRef : undefined} key={v.value}>
+                  <TimeItem
+                    option={v}
+                    selected={v.value === second}
+                    onSelect={(v) => setSecond(v.value)}
+                    className="h-8"
+                  />
+                </div>
               ))}
             </div>
             {use12HourFormat && (
@@ -253,3 +261,31 @@ const TimeItem = ({
     </Button>
   );
 };
+
+interface BuildTimeOptions {
+  use12HourFormat?: boolean;
+  value: Date;
+  formatStr: string;
+  hour: number;
+  minute: number;
+  second: number;
+  ampm: number;
+}
+
+function buildTime(options: BuildTimeOptions) {
+  const { use12HourFormat, value, formatStr, hour, minute, second, ampm } = options;
+  let date: Date;
+  if (use12HourFormat) {
+    const dateStrRaw = format(value, formatStr);
+    // yyyy-MM-dd hh:mm:ss.SSS a zzzz
+    // 2024-10-14 01:20:07.524 AM GMT+00:00
+    let dateStr = dateStrRaw.slice(0, 11) + hour.toString().padStart(2, '0') + dateStrRaw.slice(13);
+    dateStr = dateStr.slice(0, 14) + minute.toString().padStart(2, '0') + dateStr.slice(16);
+    dateStr = dateStr.slice(0, 17) + second.toString().padStart(2, '0') + dateStr.slice(19);
+    dateStr = dateStr.slice(0, 24) + (ampm == AM_VALUE ? 'AM' : 'PM') + dateStr.slice(26);
+    date = parse(dateStr, formatStr, value);
+  } else {
+    date = setHours(setMinutes(setSeconds(value, second), minute), hour);
+  }
+  return date;
+}
