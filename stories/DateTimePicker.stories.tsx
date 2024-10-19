@@ -10,8 +10,8 @@ import { addYears, subYears, format } from 'date-fns';
 import '../app/globals.css';
 import { useState } from 'react';
 
-// More on how to set up stories at: https://storybook.js.org/docs/writing-stories#default-export
-let value = new Date();
+import { linkTo } from '@storybook/addon-links';
+
 const meta = {
   title: 'Datetime Picker',
   component: DateTimePicker,
@@ -39,16 +39,38 @@ const meta = {
     value: new Date(),
     onChange: fn(),
   },
-  render: (args) => {
+  decorators: [
+    (Story, info) => (
+      <div className="flex flex-col gap-4">
+        {info.name === 'Default' && (
+          <div className="flex items-center space-x-2">
+            <span className="font-semibold">Repository:</span>
+            <a 
+              href="https://github.com/huybuidac/shadcn-datetime-picker" 
+              className="text-blue-500 hover:underline"
+              target="_blank" 
+              rel="noopener noreferrer"
+            >
+              shadcn-datetime-picker
+            </a>
+          </div>
+        )}
+        <Story />
+      </div>
+    ),
+  ],
+  render: (args, info) => {
     const [value, setValue] = useState(new Date());
-    return <DateTimePicker {...args} value={value} onChange={(date) => setValue(date)} />;
+    return <DateTimePicker className='w-fit' {...args} value={value} onChange={(date) => setValue(date)} />;
   },
 } satisfies Meta<typeof DateTimePicker>;
 
 export default meta;
 type Story = StoryObj<typeof meta>;
 
-export const Default: Story = {};
+export const Default: Story = {
+  tags: ['DEFAULT'],
+};
 
 export const _24HourFormat: Story = {
   args: {
@@ -84,7 +106,7 @@ export const MinMax: Story = {
   render: (args) => {
     const [value, setValue] = useState(new Date());
     return (
-      <div className='flex flex-col gap-4'>
+      <div className="flex flex-col gap-4">
         <div>Min: {format(args.min!, 'MMM d, yyyy hh:mm:ss a')}</div>
         <div>Max: {format(args.max!, 'MMM d, yyyy hh:mm:ss a')}</div>
         <DateTimePicker {...args} value={value} onChange={(date) => setValue(date)} />
