@@ -18,6 +18,9 @@ const meta = {
   parameters: {
     // Optional parameter to center the component in the Canvas. More info: https://storybook.js.org/docs/configure/story-layout
     layout: 'centered',
+    storySource: {
+      source: 'https://github.com/huybuidac/shadcn-datetime-picker',
+    },
   },
   tags: ['autodocs'],
   // More on argTypes: https://storybook.js.org/docs/api/argtypes
