@@ -1,3 +1,8 @@
+/**
+ * Simple Time Picker
+ * Check out the live demo at https://shadcn-datetime-picker-xi.vercel.app/
+ * Find the latest source code at https://github.com/huybuidac/shadcn-datetime-picker
+ */
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { cn } from '@/lib/utils';
@@ -13,6 +18,11 @@ import {
   startOfMinute,
   endOfMinute,
   setSeconds,
+  startOfDay,
+  endOfDay,
+  addHours,
+  subHours,
+  setMilliseconds,
 } from 'date-fns';
 
 interface SimpleTimeOption {
@@ -27,16 +37,16 @@ const PM_VALUE = 1;
 export function SimpleTimePicker({
   value,
   onChange,
-  use12HourFormat,
-  minDate,
-  maxDate,
+  use12HourFormat = true,
+  min,
+  max,
   disabled,
 }: {
   use12HourFormat?: boolean;
   value: Date;
   onChange: (date: Date) => void;
-  minDate?: Date;
-  maxDate?: Date;
+  min?: Date;
+  max?: Date;
   disabled?: boolean;
 }) {
   // hours24h = HH
@@ -56,7 +66,7 @@ export function SimpleTimePicker({
 
   const _hourIn24h = useMemo(() => {
     if (use12HourFormat) {
-      return ampm === AM_VALUE ? (hour == 0 ? 12 : hour) : hour == 12 ? 0 : hour + 12;
+      return (hour % 12) + ampm * 12;
     }
     return hour;
   }, [hour, use12HourFormat, ampm]);
@@ -65,63 +75,66 @@ export function SimpleTimePicker({
     () =>
       Array.from({ length: use12HourFormat ? 12 : 24 }, (_, i) => {
         let disabled = false;
-        let hourValue = i;
-        if (use12HourFormat) {
-          hourValue = i === 0 ? 12 : i;
-        }
-        const hDate = setHours(
-          value,
-          ampm === AM_VALUE ? (hourValue == 0 ? 12 : hourValue) : hourValue == 12 ? 0 : hourValue + 12
-        );
+        const hourValue = use12HourFormat ? (i === 0 ? 12 : i) : i;
+        const hDate = setHours(value, use12HourFormat ? i + ampm * 12 : i);
         const hStart = startOfHour(hDate);
         const hEnd = endOfHour(hDate);
-        if (minDate && hEnd < minDate) disabled = true;
-        if (maxDate && hStart > maxDate) disabled = true;
+        if (min && hEnd < min) disabled = true;
+        if (max && hStart > max) disabled = true;
         return {
           value: hourValue,
           label: hourValue.toString().padStart(2, '0'),
           disabled,
         };
       }),
-    [value, minDate, maxDate, use12HourFormat]
+    [value, min, max, use12HourFormat]
   );
-  const minutes: SimpleTimeOption[] = useMemo(
-    () =>
-      Array.from({ length: 60 }, (_, i) => {
-        let disabled = false;
-        const mDate = setMinutes(setHours(value, _hourIn24h), i);
-        const mStart = startOfMinute(mDate);
-        const mEnd = endOfMinute(mDate);
-        if (minDate && mEnd < minDate) disabled = true;
-        if (maxDate && mStart > maxDate) disabled = true;
-        return {
-          value: i,
-          label: i.toString().padStart(2, '0'),
-          disabled,
-        };
-      }),
-    [value, hour, minDate, maxDate, _hourIn24h]
-  );
-  const seconds: SimpleTimeOption[] = useMemo(
-    () =>
-      Array.from({ length: 60 }, (_, i) => {
-        let disabled = false;
-        const sDate = setSeconds(setMinutes(setHours(value, _hourIn24h), minute), i);
-        if (minDate && sDate < minDate) disabled = true;
-        if (maxDate && sDate > maxDate) disabled = true;
-        return {
-          value: i,
-          label: i.toString().padStart(2, '0'),
-          disabled,
-        };
-      }),
-    [value, hour, minute, minDate, maxDate, _hourIn24h]
-  );
+  const minutes: SimpleTimeOption[] = useMemo(() => {
+    const anchorDate = setHours(value, _hourIn24h);
+    return Array.from({ length: 60 }, (_, i) => {
+      let disabled = false;
+      const mDate = setMinutes(anchorDate, i);
+      const mStart = startOfMinute(mDate);
+      const mEnd = endOfMinute(mDate);
+      if (min && mEnd < min) disabled = true;
+      if (max && mStart > max) disabled = true;
+      return {
+        value: i,
+        label: i.toString().padStart(2, '0'),
+        disabled,
+      };
+    });
+  }, [value, hour, min, max, _hourIn24h]);
+  const seconds: SimpleTimeOption[] = useMemo(() => {
+    const anchorDate = setMilliseconds(setMinutes(setHours(value, _hourIn24h), minute), 0);
+    const _min = min ? setMilliseconds(min, 0) : undefined;
+    const _max = max ? setMilliseconds(max, 0) : undefined;
+    return Array.from({ length: 60 }, (_, i) => {
+      let disabled = false;
+      const sDate = setSeconds(anchorDate, i);
+      if (_min && sDate < _min) disabled = true;
+      if (_max && sDate > _max) disabled = true;
+      return {
+        value: i,
+        label: i.toString().padStart(2, '0'),
+        disabled,
+      };
+    });
+  }, [value, hour, minute, min, max, _hourIn24h]);
   const ampmOptions = useMemo(() => {
+    const startD = startOfDay(value);
+    const endD = endOfDay(value);
     return [
-      { value: AM_VALUE, label: 'AM', disabled: false },
-      { value: PM_VALUE, label: 'PM', disabled: false },
-    ];
+      { value: AM_VALUE, label: 'AM' },
+      { value: PM_VALUE, label: 'PM' },
+    ].map((v) => {
+      let disabled = false;
+      const start = addHours(startD, ampm * 12);
+      const end = subHours(endD, (1 - ampm) * 12);
+      if (min && end < min) disabled = true;
+      if (max && start > max) disabled = true;
+      return { ...v, disabled };
+    });
   }, [hour, use12HourFormat]);
 
   const [open, setOpen] = useState(false);
@@ -143,15 +156,18 @@ export function SimpleTimePicker({
   }, [open]);
   const onHourChange = useCallback(
     (v: SimpleTimeOption) => {
-      if (minDate) {
+      if (min) {
         let newTime = buildTime({ use12HourFormat, value, formatStr, hour: v.value, minute, second, ampm });
-        if (newTime < minDate) {
-          newTime = setSeconds(newTime, minDate.getSeconds());
-          setSecond(newTime.getSeconds());
-          if (newTime < minDate) {
-            newTime = setMinutes(newTime, minDate.getMinutes());
-            setMinute(newTime.getMinutes());
-          }
+        if (newTime < min) {
+          setMinute(min.getMinutes());
+          setSecond(min.getSeconds());
+        }
+      }
+      if (max) {
+        let newTime = buildTime({ use12HourFormat, value, formatStr, hour: v.value, minute, second, ampm });
+        if (newTime > max) {
+          setMinute(max.getMinutes());
+          setSecond(max.getSeconds());
         }
       }
       setHour(v.value);
@@ -161,16 +177,46 @@ export function SimpleTimePicker({
 
   const onMinuteChange = useCallback(
     (v: SimpleTimeOption) => {
-      if (minDate) {
+      if (min) {
         let newTime = buildTime({ use12HourFormat, value, formatStr, hour: v.value, minute, second, ampm });
-        if (newTime < minDate) {
-          newTime = setSeconds(newTime, minDate.getSeconds());
+        if (newTime < min) {
+          setSecond(min.getSeconds());
+        }
+      }
+      if (max) {
+        let newTime = buildTime({ use12HourFormat, value, formatStr, hour: v.value, minute, second, ampm });
+        if (newTime > max) {
           setSecond(newTime.getSeconds());
         }
       }
       setMinute(v.value);
     },
     [setMinute, use12HourFormat, value, formatStr, hour, second, ampm]
+  );
+
+  const onAmpmChange = useCallback(
+    (v: SimpleTimeOption) => {
+      if (min) {
+        let newTime = buildTime({ use12HourFormat, value, formatStr, hour, minute, second, ampm: v.value });
+        if (newTime < min) {
+          const minH = min.getHours() % 12;
+          setHour(minH === 0 ? 12 : minH);
+          setMinute(min.getMinutes());
+          setSecond(min.getSeconds());
+        }
+      }
+      if (max) {
+        let newTime = buildTime({ use12HourFormat, value, formatStr, hour, minute, second, ampm: v.value });
+        if (newTime > max) {
+          const maxH = max.getHours() % 12;
+          setHour(maxH === 0 ? 12 : maxH);
+          setMinute(max.getMinutes());
+          setSecond(max.getSeconds());
+        }
+      }
+      setAmpm(v.value);
+    },
+    [setAmpm, use12HourFormat, value, formatStr, hour, minute, second, min, max]
   );
 
   const display = useMemo(() => {
@@ -192,14 +238,26 @@ export function SimpleTimePicker({
             <div className="flex grow flex-col items-stretch overflow-y-auto pe-2 pb-48">
               {hours.map((v) => (
                 <div ref={v.value === hour ? hourRef : undefined} key={v.value}>
-                  <TimeItem option={v} selected={v.value === hour} onSelect={onHourChange} className="h-8" />
+                  <TimeItem
+                    option={v}
+                    selected={v.value === hour}
+                    onSelect={onHourChange}
+                    disabled={v.disabled}
+                    className="h-8"
+                  />
                 </div>
               ))}
             </div>
             <div className="flex grow flex-col items-stretch overflow-y-auto pe-2 pb-48">
               {minutes.map((v) => (
                 <div ref={v.value === minute ? minuteRef : undefined} key={v.value}>
-                  <TimeItem option={v} selected={v.value === minute} onSelect={onMinuteChange} className="h-8" />
+                  <TimeItem
+                    option={v}
+                    selected={v.value === minute}
+                    onSelect={onMinuteChange}
+                    disabled={v.disabled}
+                    className="h-8"
+                  />
                 </div>
               ))}
             </div>
@@ -211,6 +269,7 @@ export function SimpleTimePicker({
                     selected={v.value === second}
                     onSelect={(v) => setSecond(v.value)}
                     className="h-8"
+                    disabled={v.disabled}
                   />
                 </div>
               ))}
@@ -222,7 +281,7 @@ export function SimpleTimePicker({
                     key={v.value}
                     option={v}
                     selected={v.value === ampm}
-                    onSelect={(v) => setAmpm(v.value)}
+                    onSelect={onAmpmChange}
                     className="h-8"
                     disabled={v.disabled}
                   />
@@ -285,7 +344,7 @@ function buildTime(options: BuildTimeOptions) {
     dateStr = dateStr.slice(0, 24) + (ampm == AM_VALUE ? 'AM' : 'PM') + dateStr.slice(26);
     date = parse(dateStr, formatStr, value);
   } else {
-    date = setHours(setMinutes(setSeconds(value, second), minute), hour);
+    date = setHours(setMinutes(setSeconds(setMilliseconds(value, 0), second), minute), hour);
   }
   return date;
 }

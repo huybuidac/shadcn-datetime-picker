@@ -1,3 +1,8 @@
+/**
+ * Shadcn Datetime Picker with support for timezone, date and time selection, minimum and maximum date limits, and 12-hour format...
+ * Check out the live demo at https://shadcn-datetime-picker-xi.vercel.app/
+ * Find the latest source code at https://github.com/huybuidac/shadcn-datetime-picker
+ */
 'use client';
 
 import * as React from 'react';
@@ -23,6 +28,11 @@ import {
   endOfYear,
   addMonths,
   subMonths,
+  setMilliseconds,
+  addHours,
+  subHours,
+  startOfDay,
+  endOfDay,
 } from 'date-fns';
 import { CheckIcon, ChevronDownIcon, ChevronLeftIcon, ChevronRightIcon, ChevronUpIcon, Clock } from 'lucide-react';
 import { DayPicker, Matcher, TZDate } from 'react-day-picker';
@@ -36,6 +46,52 @@ export type CalendarProps = Omit<React.ComponentProps<typeof DayPicker>, 'mode'>
 
 const AM_VALUE = 0;
 const PM_VALUE = 1;
+
+export type DateTimePickerProps = {
+  /**
+   * The datetime value to display and control.
+   */
+  value: Date | undefined;
+  /**
+   * Callback function to handle datetime changes.
+   */
+  onChange: (date: Date) => void;
+  /**
+   * The minimum datetime value allowed.
+   * @default undefined
+   */
+  min?: Date;
+  /**
+   * The maximum datetime value allowed.
+   */
+  max?: Date;
+  /**
+   * The timezone to display the datetime in, based on the date-fns.
+   * For a complete list of valid time zone identifiers, refer to:
+   * https://en.wikipedia.org/wiki/List_of_tz_database_time_zones
+   * @default undefined
+   */
+  timezone?: string;
+  /**
+   * Whether the datetime picker is disabled.
+   * @default false
+   */
+  disabled?: boolean;
+  /**
+   * Whether to show the time picker.
+   * @default true
+   */
+  showTime?: boolean;
+  /**
+   * Whether to use 12-hour format.
+   * @default true
+   */
+  use12HourFormat?: boolean;
+  /**
+   * Custom render function for the trigger.
+   */
+  renderTrigger?: (props: DateTimeRenderTriggerProps) => React.ReactNode;
+};
 
 export type DateTimeRenderTriggerProps = {
   value: Date | undefined;
@@ -56,17 +112,7 @@ export function DateTimePicker({
   use12HourFormat = true,
   disabled,
   ...props
-}: {
-  value: Date | undefined;
-  onChange: (date: Date) => void;
-  min?: Date;
-  max?: Date;
-  timezone?: string;
-  disabled?: boolean;
-  showTime?: boolean;
-  use12HourFormat?: boolean;
-  renderTrigger?: (props: DateTimeRenderTriggerProps) => React.ReactNode;
-} & CalendarProps) {
+}: DateTimePickerProps & CalendarProps) {
   const [open, setOpen] = useState(false);
   const [monthYearPicker, setMonthYearPicker] = useState<'month' | 'year' | false>(false);
   const initDate = useMemo(() => new TZDate(value || new Date(), timezone), [value, timezone]);
@@ -83,6 +129,12 @@ export function DateTimePicker({
   const onDayChanged = useCallback(
     (d: Date) => {
       d.setHours(date.getHours(), date.getMinutes(), date.getSeconds());
+      if (min && d < min) {
+        d.setHours(min.getHours(), min.getMinutes(), min.getSeconds());
+      }
+      if (max && d > max) {
+        d.setHours(max.getHours(), max.getMinutes(), max.getSeconds());
+      }
       setDate(d);
     },
     [setDate, setMonth]
@@ -222,13 +274,7 @@ export function DateTimePicker({
         </div>
         <div className="flex flex-col gap-2">
           {showTime && (
-            <TimePicker
-              value={date}
-              onChange={setDate}
-              use12HourFormat={use12HourFormat}
-              minDate={minDate}
-              maxDate={maxDate}
-            />
+            <TimePicker value={date} onChange={setDate} use12HourFormat={use12HourFormat} min={minDate} max={maxDate} />
           )}
           <div className="flex flex-row-reverse items-center justify-between">
             <Button className="ms-2 h-7 px-2" onClick={onSumbit}>
@@ -357,14 +403,14 @@ function TimePicker({
   value,
   onChange,
   use12HourFormat,
-  minDate,
-  maxDate,
+  min,
+  max,
 }: {
   use12HourFormat?: boolean;
   value: Date;
   onChange: (date: Date) => void;
-  minDate?: Date;
-  maxDate?: Date;
+  min?: Date;
+  max?: Date;
 }) {
   // hours24h = HH
   // hours12h = hh
@@ -379,11 +425,11 @@ function TimePicker({
 
   useEffect(() => {
     onChange(buildTime({ use12HourFormat, value, formatStr, hour, minute, second, ampm }));
-  }, [hour, minute, second, ampm, use12HourFormat, onChange]);
+  }, [hour, minute, second, ampm, use12HourFormat]);
 
   const _hourIn24h = useMemo(() => {
     if (use12HourFormat) {
-      return ampm === AM_VALUE ? (hour == 0 ? 12 : hour) : hour == 12 ? 0 : hour + 12;
+      return (hour % 12) + ampm * 12;
     }
     return hour;
   }, [hour, use12HourFormat, ampm]);
@@ -392,64 +438,68 @@ function TimePicker({
     () =>
       Array.from({ length: use12HourFormat ? 12 : 24 }, (_, i) => {
         let disabled = false;
-        let hourValue = i;
-        if (use12HourFormat) {
-          hourValue = i === 0 ? 12 : i;
-        }
-        const hDate = setHours(
-          value,
-          ampm === AM_VALUE ? (hourValue == 0 ? 12 : hourValue) : hourValue == 12 ? 0 : hourValue + 12
-        );
+        const hourValue = use12HourFormat ? (i === 0 ? 12 : i) : i;
+        const hDate = setHours(value, use12HourFormat ? i + ampm * 12 : i);
         const hStart = startOfHour(hDate);
         const hEnd = endOfHour(hDate);
-        if (minDate && hEnd < minDate) disabled = true;
-        if (maxDate && hStart > maxDate) disabled = true;
+        if (min && hEnd < min) disabled = true;
+        if (max && hStart > max) disabled = true;
         return {
           value: hourValue,
           label: hourValue.toString().padStart(2, '0'),
           disabled,
         };
       }),
-    [value, minDate, maxDate, use12HourFormat, _hourIn24h]
+    [value, min, max, use12HourFormat]
   );
-  const minutes: TimeOption[] = useMemo(
-    () =>
-      Array.from({ length: 60 }, (_, i) => {
-        let disabled = false;
-        const mDate = setMinutes(setHours(value, _hourIn24h), i);
-        const mStart = startOfMinute(mDate);
-        const mEnd = endOfMinute(mDate);
-        if (minDate && mEnd < minDate) disabled = true;
-        if (maxDate && mStart > maxDate) disabled = true;
-        return {
-          value: i,
-          label: i.toString().padStart(2, '0'),
-          disabled,
-        };
-      }),
-    [value, _hourIn24h, minDate, maxDate]
-  );
-  const seconds: TimeOption[] = useMemo(
-    () =>
-      Array.from({ length: 60 }, (_, i) => {
-        let disabled = false;
-        const sDate = setSeconds(setMinutes(setHours(value, _hourIn24h), minute), i);
-        if (minDate && sDate < minDate) disabled = true;
-        if (maxDate && sDate > maxDate) disabled = true;
-        return {
-          value: i,
-          label: i.toString().padStart(2, '0'),
-          disabled,
-        };
-      }),
-    [value, _hourIn24h, minute, minDate, maxDate]
-  );
+  const minutes: TimeOption[] = useMemo(() => {
+    const anchorDate = setHours(value, _hourIn24h);
+    return Array.from({ length: 60 }, (_, i) => {
+      let disabled = false;
+      const mDate = setMinutes(anchorDate, i);
+      const mStart = startOfMinute(mDate);
+      const mEnd = endOfMinute(mDate);
+      if (min && mEnd < min) disabled = true;
+      if (max && mStart > max) disabled = true;
+      return {
+        value: i,
+        label: i.toString().padStart(2, '0'),
+        disabled,
+      };
+    });
+  }, [value, hour, min, max, _hourIn24h]);
+  const seconds: TimeOption[] = useMemo(() => {
+    const anchorDate = setMilliseconds(setMinutes(setHours(value, _hourIn24h), minute), 0);
+    const _min = min ? setMilliseconds(min, 0) : undefined;
+    const _max = max ? setMilliseconds(max, 0) : undefined;
+    return Array.from({ length: 60 }, (_, i) => {
+      let disabled = false;
+      const sDate = setSeconds(anchorDate, i);
+      if (_min && sDate < _min) disabled = true;
+      if (_max && sDate > _max) disabled = true;
+      return {
+        value: i,
+        label: i.toString().padStart(2, '0'),
+        disabled,
+      };
+    });
+  }, [value, hour, minute, min, max, _hourIn24h]);
   const ampmOptions = useMemo(() => {
+    const startD = startOfDay(value);
+    const endD = endOfDay(value);
     return [
-      { value: AM_VALUE, label: 'AM', disabled: false },
-      { value: PM_VALUE, label: 'PM', disabled: false },
-    ];
+      { value: AM_VALUE, label: 'AM' },
+      { value: PM_VALUE, label: 'PM' },
+    ].map((v) => {
+      let disabled = false;
+      const start = addHours(startD, ampm * 12);
+      const end = subHours(endD, (1 - ampm) * 12);
+      if (min && end < min) disabled = true;
+      if (max && start > max) disabled = true;
+      return { ...v, disabled };
+    });
   }, [hour, use12HourFormat]);
+
   const [open, setOpen] = useState(false);
 
   const hourRef = useRef<HTMLDivElement>(null);
@@ -470,15 +520,18 @@ function TimePicker({
 
   const onHourChange = useCallback(
     (v: TimeOption) => {
-      if (minDate) {
+      if (min) {
         let newTime = buildTime({ use12HourFormat, value, formatStr, hour: v.value, minute, second, ampm });
-        if (newTime < minDate) {
-          newTime = setSeconds(newTime, minDate.getSeconds());
-          setSecond(newTime.getSeconds());
-          if (newTime < minDate) {
-            newTime = setMinutes(newTime, minDate.getMinutes());
-            setMinute(newTime.getMinutes());
-          }
+        if (newTime < min) {
+          setMinute(min.getMinutes());
+          setSecond(min.getSeconds());
+        }
+      }
+      if (max) {
+        let newTime = buildTime({ use12HourFormat, value, formatStr, hour: v.value, minute, second, ampm });
+        if (newTime > max) {
+          setMinute(max.getMinutes());
+          setSecond(max.getSeconds());
         }
       }
       setHour(v.value);
@@ -488,16 +541,46 @@ function TimePicker({
 
   const onMinuteChange = useCallback(
     (v: TimeOption) => {
-      if (minDate) {
+      if (min) {
         let newTime = buildTime({ use12HourFormat, value, formatStr, hour: v.value, minute, second, ampm });
-        if (newTime < minDate) {
-          newTime = setSeconds(newTime, minDate.getSeconds());
+        if (newTime < min) {
+          setSecond(min.getSeconds());
+        }
+      }
+      if (max) {
+        let newTime = buildTime({ use12HourFormat, value, formatStr, hour: v.value, minute, second, ampm });
+        if (newTime > max) {
           setSecond(newTime.getSeconds());
         }
       }
       setMinute(v.value);
     },
     [setMinute, use12HourFormat, value, formatStr, hour, second, ampm]
+  );
+
+  const onAmpmChange = useCallback(
+    (v: TimeOption) => {
+      if (min) {
+        let newTime = buildTime({ use12HourFormat, value, formatStr, hour, minute, second, ampm: v.value });
+        if (newTime < min) {
+          const minH = min.getHours() % 12;
+          setHour(minH === 0 ? 12 : minH);
+          setMinute(min.getMinutes());
+          setSecond(min.getSeconds());
+        }
+      }
+      if (max) {
+        let newTime = buildTime({ use12HourFormat, value, formatStr, hour, minute, second, ampm: v.value });
+        if (newTime > max) {
+          const maxH = max.getHours() % 12;
+          setHour(maxH === 0 ? 12 : maxH);
+          setMinute(max.getMinutes());
+          setSecond(max.getSeconds());
+        }
+      }
+      setAmpm(v.value);
+    },
+    [setAmpm, use12HourFormat, value, formatStr, hour, minute, second, min, max]
   );
 
   const display = useMemo(() => {
@@ -562,7 +645,7 @@ function TimePicker({
                     key={v.value}
                     option={v}
                     selected={v.value === ampm}
-                    onSelect={(v) => setAmpm(v.value)}
+                    onSelect={onAmpmChange}
                     className="h-8"
                     disabled={v.disabled}
                   />
