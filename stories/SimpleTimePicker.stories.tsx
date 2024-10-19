@@ -30,11 +30,10 @@ const meta = {
   },
   // Use `fn` to spy on the onClick arg, which will appear in the actions panel once invoked: https://storybook.js.org/docs/essentials/actions#action-args
   args: {
-    value: new Date(),
     onChange: fn(),
   },
   render: (args) => {
-    const [value, setValue] = useState(new Date());
+    const [value, setValue] = useState(args.value || new Date());
     return <SimpleTimePicker {...args} value={value} onChange={(date) => setValue(date)} />;
   },
 } satisfies Meta<typeof SimpleTimePicker>;
@@ -42,16 +41,22 @@ const meta = {
 export default meta;
 type Story = StoryObj<typeof meta>;
 
-export const Default: Story = {};
+export const Default: Story = {
+  args: {
+    value: new Date(),
+  },
+};
 
 export const _24HourFormat: Story = {
   args: {
+    value: new Date(),
     use12HourFormat: false,
   },
 };
 
 export const Disabled: Story = {
   args: {
+    value: new Date(),
     disabled: true,
   },
 };
@@ -59,11 +64,12 @@ export const Disabled: Story = {
 export const MinMax: Story = {
   name: 'Time Selection Limits (Min/Max)',
   args: {
-    min: subHours(new Date(), 3),
-    max: addHours(new Date(), 5),
+    value: new Date('2024-10-19T13:00:00'),
+    min: new Date('2024-10-19T10:22:33'),
+    max: new Date('2024-10-19T14:44:55'),
   },
   render: (args) => {
-    const [value, setValue] = useState(new Date());
+    const [value, setValue] = useState(args.value || new Date());
     return (
       <div className='flex flex-col gap-4'>
         <div>Min: {format(args.min!, 'hh:mm:ss a')}</div>

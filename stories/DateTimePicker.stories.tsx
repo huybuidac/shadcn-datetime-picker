@@ -57,7 +57,7 @@ const meta = {
   ],
   render: (args) => {
     const [value, setValue] = useState(new Date());
-    return <DateTimePicker className='w-fit' {...args} value={value} onChange={(date) => setValue(date)} />;
+    return <DateTimePicker {...args} value={value} onChange={(date) => setValue(date)} />;
   },
 } satisfies Meta<typeof DateTimePicker>;
 
@@ -78,6 +78,22 @@ export const DatePicker: Story = {
   args: {
     showTime: false,
   },
+  parameters: {
+    docs: {
+      source: {
+        code: `
+const [value, setValue] = useState(new Date());
+<DateTimePicker 
+  value={value} 
+  onChange={setValue} 
+  showTime={false} 
+/>
+        `,
+        language: "tsx",
+        type: "auto",
+      },
+    },
+  }
 };
 
 export const Timezone: Story = {

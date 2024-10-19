@@ -425,14 +425,14 @@ function TimePicker({
 
   useEffect(() => {
     onChange(buildTime({ use12HourFormat, value, formatStr, hour, minute, second, ampm }));
-  }, [hour, minute, second, ampm, use12HourFormat]);
+  }, [hour, minute, second, ampm, formatStr, use12HourFormat]);
 
   const _hourIn24h = useMemo(() => {
-    if (use12HourFormat) {
-      return (hour % 12) + ampm * 12;
-    }
-    return hour;
-  }, [hour, use12HourFormat, ampm]);
+    // if (use12HourFormat) {
+    //   return (hour % 12) + ampm * 12;
+    // }
+    return use12HourFormat ? hour % 12 + ampm * 12 : hour;
+  }, [value, use12HourFormat, ampm]);
 
   const hours: TimeOption[] = useMemo(
     () =>
@@ -450,7 +450,7 @@ function TimePicker({
           disabled,
         };
       }),
-    [value, min, max, use12HourFormat]
+    [value, min, max, use12HourFormat, ampm]
   );
   const minutes: TimeOption[] = useMemo(() => {
     const anchorDate = setHours(value, _hourIn24h);
@@ -467,7 +467,7 @@ function TimePicker({
         disabled,
       };
     });
-  }, [value, hour, min, max, _hourIn24h]);
+  }, [value, min, max, _hourIn24h]);
   const seconds: TimeOption[] = useMemo(() => {
     const anchorDate = setMilliseconds(setMinutes(setHours(value, _hourIn24h), minute), 0);
     const _min = min ? setMilliseconds(min, 0) : undefined;
@@ -483,7 +483,7 @@ function TimePicker({
         disabled,
       };
     });
-  }, [value, hour, minute, min, max, _hourIn24h]);
+  }, [value, minute, min, max, _hourIn24h]);
   const ampmOptions = useMemo(() => {
     const startD = startOfDay(value);
     const endD = endOfDay(value);
@@ -492,13 +492,13 @@ function TimePicker({
       { value: PM_VALUE, label: 'PM' },
     ].map((v) => {
       let disabled = false;
-      const start = addHours(startD, ampm * 12);
-      const end = subHours(endD, (1 - ampm) * 12);
+      const start = addHours(startD, v.value * 12);
+      const end = subHours(endD, (1 - v.value) * 12);
       if (min && end < min) disabled = true;
       if (max && start > max) disabled = true;
       return { ...v, disabled };
     });
-  }, [hour, use12HourFormat]);
+  }, [value, min, max]);
 
   const [open, setOpen] = useState(false);
 
