@@ -2,7 +2,7 @@
 
 A datetime picker component for Shadcn UI, designed to provide a user-friendly interface for selecting dates and times. This component is highly customizable and supports various features such as time zone selection and custom triggers.
 
-Demo: https://shadcn-datetime-picker-xi.vercel.app/
+Demo: https://shadcn-datetime-picker-pro.vercel.app/
 
 ![Simple DateTime Picker](images/simple.png)
 

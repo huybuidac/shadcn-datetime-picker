@@ -1,16 +1,12 @@
 import type { Meta, StoryObj } from '@storybook/react';
-import { Source } from '@storybook/blocks';
 import { fn } from '@storybook/test';
 
 import { DateTimePicker } from '../components/datetime-picker';
-import type { DateTimePicker as DateTimePickerType } from '../components/datetime-picker';
 
 import { addYears, subYears, format } from 'date-fns';
 
 import '../app/globals.css';
 import { useState } from 'react';
-
-import { linkTo } from '@storybook/addon-links';
 
 const meta = {
   title: 'Datetime Picker',
@@ -59,7 +55,7 @@ const meta = {
       </div>
     ),
   ],
-  render: (args, info) => {
+  render: (args) => {
     const [value, setValue] = useState(new Date());
     return <DateTimePicker className='w-fit' {...args} value={value} onChange={(date) => setValue(date)} />;
   },
