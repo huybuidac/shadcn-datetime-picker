@@ -41,10 +41,10 @@ const meta = {
         {info.name === 'Default' && (
           <div className="flex items-center space-x-2">
             <span className="font-semibold">Repository:</span>
-            <a 
-              href="https://github.com/huybuidac/shadcn-datetime-picker" 
+            <a
+              href="https://github.com/huybuidac/shadcn-datetime-picker"
               className="text-blue-500 hover:underline"
-              target="_blank" 
+              target="_blank"
               rel="noopener noreferrer"
             >
               shadcn-datetime-picker
@@ -72,6 +72,20 @@ export const _24HourFormat: Story = {
   args: {
     use12HourFormat: false,
   },
+  parameters: {
+    docs: {
+      source: {
+        code: `
+const [value, setValue] = useState(new Date());
+<DateTimePicker
+  value={value}
+  onChange={setValue}
+  use12HourFormat={false}
+/>
+          `,
+      },
+    },
+  },
 };
 
 export const DatePicker: Story = {
@@ -82,18 +96,16 @@ export const DatePicker: Story = {
     docs: {
       source: {
         code: `
-const [value, setValue] = useState(new Date());
-<DateTimePicker 
-  value={value} 
-  onChange={setValue} 
-  showTime={false} 
-/>
-        `,
-        language: "tsx",
-        type: "auto",
+  const [value, setValue] = useState(new Date());
+  <DateTimePicker
+    value={value}
+    onChange={setValue}
+    showTime={false}
+  />
+          `,
       },
     },
-  }
+  },
 };
 
 export const Timezone: Story = {

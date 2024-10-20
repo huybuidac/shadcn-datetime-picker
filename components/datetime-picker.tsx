@@ -1,6 +1,6 @@
 /**
  * Shadcn Datetime Picker with support for timezone, date and time selection, minimum and maximum date limits, and 12-hour format...
- * Check out the live demo at https://shadcn-datetime-picker-xi.vercel.app/
+ * Check out the live demo at https://shadcn-datetime-picker-pro.vercel.app/
  * Find the latest source code at https://github.com/huybuidac/shadcn-datetime-picker
  */
 'use client';

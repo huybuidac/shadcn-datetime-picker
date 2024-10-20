@@ -1,6 +1,6 @@
 /**
  * Simple Time Picker
- * Check out the live demo at https://shadcn-datetime-picker-xi.vercel.app/
+ * Check out the live demo at https://shadcn-datetime-picker-pro.vercel.app/
  * Find the latest source code at https://github.com/huybuidac/shadcn-datetime-picker
  */
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
@@ -62,13 +62,10 @@ export function SimpleTimePicker({
 
   useEffect(() => {
     onChange(buildTime({ use12HourFormat, value, formatStr, hour, minute, second, ampm }));
-  }, [hour, minute, second, ampm, use12HourFormat]);
+  }, [hour, minute, second, ampm, formatStr, use12HourFormat]);
 
   const _hourIn24h = useMemo(() => {
-    if (use12HourFormat) {
-      return (hour % 12) + ampm * 12;
-    }
-    return hour;
+    return use12HourFormat ? hour % 12 + ampm * 12 : hour;
   }, [hour, use12HourFormat, ampm]);
 
   const hours: SimpleTimeOption[] = useMemo(
@@ -87,7 +84,7 @@ export function SimpleTimePicker({
           disabled,
         };
       }),
-    [value, min, max, use12HourFormat]
+    [value, min, max, use12HourFormat, ampm]
   );
   const minutes: SimpleTimeOption[] = useMemo(() => {
     const anchorDate = setHours(value, _hourIn24h);
@@ -104,7 +101,7 @@ export function SimpleTimePicker({
         disabled,
       };
     });
-  }, [value, hour, min, max, _hourIn24h]);
+  }, [value, min, max, _hourIn24h]);
   const seconds: SimpleTimeOption[] = useMemo(() => {
     const anchorDate = setMilliseconds(setMinutes(setHours(value, _hourIn24h), minute), 0);
     const _min = min ? setMilliseconds(min, 0) : undefined;
@@ -120,7 +117,7 @@ export function SimpleTimePicker({
         disabled,
       };
     });
-  }, [value, hour, minute, min, max, _hourIn24h]);
+  }, [value, minute, min, max, _hourIn24h]);
   const ampmOptions = useMemo(() => {
     const startD = startOfDay(value);
     const endD = endOfDay(value);
@@ -129,13 +126,13 @@ export function SimpleTimePicker({
       { value: PM_VALUE, label: 'PM' },
     ].map((v) => {
       let disabled = false;
-      const start = addHours(startD, ampm * 12);
-      const end = subHours(endD, (1 - ampm) * 12);
+      const start = addHours(startD, v.value * 12);
+      const end = subHours(endD, (1 - v.value) * 12);
       if (min && end < min) disabled = true;
       if (max && start > max) disabled = true;
       return { ...v, disabled };
     });
-  }, [hour, use12HourFormat]);
+  }, [value, min, max]);
 
   const [open, setOpen] = useState(false);
 
