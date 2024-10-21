@@ -19,5 +19,6 @@ const config: StorybookConfig = {
     name: "@storybook/nextjs",
     options: {},
   },
+  staticDirs: [{ from: "../images", to: "/assets" }],
 };
 export default config;
