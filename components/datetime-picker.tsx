@@ -203,7 +203,9 @@ export function DateTimePicker({
         <div className="flex items-center justify-between">
           <div className="text-md font-bold ms-2 flex items-center cursor-pointer">
             <div>
-              <span onClick={() => setMonthYearPicker(monthYearPicker === 'month' ? false : 'month')}>{format(month, 'MMMM')}</span>
+              <span onClick={() => setMonthYearPicker(monthYearPicker === 'month' ? false : 'month')}>
+                {format(month, 'MMMM')}
+              </span>
               <span className="ms-1" onClick={() => setMonthYearPicker(monthYearPicker === 'year' ? false : 'year')}>
                 {format(month, 'yyyy')}
               </span>
@@ -431,7 +433,7 @@ function TimePicker({
     // if (use12HourFormat) {
     //   return (hour % 12) + ampm * 12;
     // }
-    return use12HourFormat ? hour % 12 + ampm * 12 : hour;
+    return use12HourFormat ? (hour % 12) + ampm * 12 : hour;
   }, [value, use12HourFormat, ampm]);
 
   const hours: TimeOption[] = useMemo(
@@ -599,58 +601,66 @@ function TimePicker({
       <PopoverContent className="p-0" side="top">
         <div className="flex-col gap-2 p-2">
           <div className="flex h-56 grow">
-            <div className="flex grow flex-col items-stretch overflow-y-auto pe-2 pb-48">
-              {hours.map((v) => (
-                <div key={v.value} ref={v.value === hour ? hourRef : undefined}>
-                  <TimeItem
-                    option={v}
-                    selected={v.value === hour}
-                    onSelect={onHourChange}
-                    className="h-8"
-                    disabled={v.disabled}
-                  />
-                </div>
-              ))}
-            </div>
-            <div className="flex grow flex-col items-stretch overflow-y-auto pe-2 pb-48">
-              {minutes.map((v) => (
-                <div key={v.value} ref={v.value === minute ? minuteRef : undefined}>
-                  <TimeItem
-                    option={v}
-                    selected={v.value === minute}
-                    onSelect={onMinuteChange}
-                    className="h-8"
-                    disabled={v.disabled}
-                  />
-                </div>
-              ))}
-            </div>
-            <div className="flex grow flex-col items-stretch overflow-y-auto pe-2 pb-48">
-              {seconds.map((v) => (
-                <div key={v.value} ref={v.value === second ? secondRef : undefined}>
-                  <TimeItem
-                    option={v}
-                    selected={v.value === second}
-                    onSelect={(v) => setSecond(v.value)}
-                    className="h-8"
-                    disabled={v.disabled}
-                  />
-                </div>
-              ))}
-            </div>
-            {use12HourFormat && (
-              <div className="flex grow flex-col items-stretch overflow-y-auto pe-2">
-                {ampmOptions.map((v) => (
-                  <TimeItem
-                    key={v.value}
-                    option={v}
-                    selected={v.value === ampm}
-                    onSelect={onAmpmChange}
-                    className="h-8"
-                    disabled={v.disabled}
-                  />
+            <ScrollArea className="h-full flex-grow">
+              <div className="flex grow flex-col items-stretch overflow-y-auto pe-2 pb-48">
+                {hours.map((v) => (
+                  <div key={v.value} ref={v.value === hour ? hourRef : undefined}>
+                    <TimeItem
+                      option={v}
+                      selected={v.value === hour}
+                      onSelect={onHourChange}
+                      className="h-8"
+                      disabled={v.disabled}
+                    />
+                  </div>
                 ))}
               </div>
+            </ScrollArea>
+            <ScrollArea className="h-full flex-grow">
+              <div className="flex grow flex-col items-stretch overflow-y-auto pe-2 pb-48">
+                {minutes.map((v) => (
+                  <div key={v.value} ref={v.value === minute ? minuteRef : undefined}>
+                    <TimeItem
+                      option={v}
+                      selected={v.value === minute}
+                      onSelect={onMinuteChange}
+                      className="h-8"
+                      disabled={v.disabled}
+                    />
+                  </div>
+                ))}
+              </div>
+            </ScrollArea>
+            <ScrollArea className="h-full flex-grow">
+              <div className="flex grow flex-col items-stretch overflow-y-auto pe-2 pb-48">
+                {seconds.map((v) => (
+                  <div key={v.value} ref={v.value === second ? secondRef : undefined}>
+                    <TimeItem
+                      option={v}
+                      selected={v.value === second}
+                      onSelect={(v) => setSecond(v.value)}
+                      className="h-8"
+                      disabled={v.disabled}
+                    />
+                  </div>
+                ))}
+              </div>
+            </ScrollArea>
+            {use12HourFormat && (
+              <ScrollArea className="h-full flex-grow">
+                <div className="flex grow flex-col items-stretch overflow-y-auto pe-2">
+                  {ampmOptions.map((v) => (
+                    <TimeItem
+                      key={v.value}
+                      option={v}
+                      selected={v.value === ampm}
+                      onSelect={onAmpmChange}
+                      className="h-8"
+                      disabled={v.disabled}
+                    />
+                  ))}
+                </div>
+              </ScrollArea>
             )}
           </div>
         </div>
