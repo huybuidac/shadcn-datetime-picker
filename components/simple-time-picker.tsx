@@ -232,6 +232,7 @@ export function SimpleTimePicker({
             'flex h-9 px-3 items-center justify-between cursor-pointer font-normal border border-input rounded-md text-sm shadow-sm',
             disabled && 'opacity-50 cursor-not-allowed'
           )}
+          tabIndex={0}
         >
           <Clock className="mr-2 size-4" />
           {display}
