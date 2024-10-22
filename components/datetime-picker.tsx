@@ -34,7 +34,15 @@ import {
   startOfDay,
   endOfDay,
 } from 'date-fns';
-import { CheckIcon, ChevronDownIcon, ChevronLeftIcon, ChevronRightIcon, ChevronUpIcon, Clock } from 'lucide-react';
+import {
+  CheckIcon,
+  ChevronDownIcon,
+  ChevronLeftIcon,
+  ChevronRightIcon,
+  ChevronUpIcon,
+  Clock,
+  XCircle,
+} from 'lucide-react';
 import { DayPicker, Matcher, TZDate } from 'react-day-picker';
 
 import { cn } from '@/lib/utils';
@@ -55,7 +63,7 @@ export type DateTimePickerProps = {
   /**
    * Callback function to handle datetime changes.
    */
-  onChange: (date: Date) => void;
+  onChange: (date: Date | undefined) => void;
   /**
    * The minimum datetime value allowed.
    * @default undefined
@@ -79,14 +87,28 @@ export type DateTimePickerProps = {
   disabled?: boolean;
   /**
    * Whether to show the time picker.
-   * @default true
+   * @default false
    */
-  showTime?: boolean;
+  hideTime?: boolean;
   /**
    * Whether to use 12-hour format.
-   * @default true
+   * @default false
    */
   use12HourFormat?: boolean;
+  /**
+   * Whether to show the clear button.
+   * @default false
+   */
+  clearable?: boolean;
+  /**
+   * Custom class names for the component.
+   */
+  classNames?: {
+    /**
+     * Custom class names for the trigger (the button that opens the picker).
+     */
+    trigger?: string;
+  };
   /**
    * Custom render function for the trigger.
    */
@@ -108,9 +130,11 @@ export function DateTimePicker({
   min,
   max,
   timezone,
-  showTime = true,
-  use12HourFormat = true,
+  hideTime,
+  use12HourFormat,
   disabled,
+  clearable,
+  classNames,
   ...props
 }: DateTimePickerProps & CalendarProps) {
   const [open, setOpen] = useState(false);
@@ -179,9 +203,9 @@ export function DateTimePicker({
     if (!displayValue) return 'Pick a date';
     return format(
       displayValue,
-      `${showTime ? 'MMM' : 'MMMM'} d, yyyy${showTime ? (use12HourFormat ? ', hh:mm:ss a' : ', HH:mm:ss') : ''}`
+      `${!hideTime ? 'MMM' : 'MMMM'} d, yyyy${!hideTime ? (use12HourFormat ? ' hh:mm:ss a' : ' HH:mm:ss') : ''}`
     );
-  }, [displayValue, showTime, use12HourFormat]);
+  }, [displayValue, hideTime, use12HourFormat]);
 
   return (
     <Popover open={open} onOpenChange={setOpen}>
@@ -189,14 +213,39 @@ export function DateTimePicker({
         {renderTrigger ? (
           renderTrigger({ value: displayValue, open, timezone, disabled, use12HourFormat })
         ) : (
-          <Button
-            disabled={disabled}
-            variant={'outline'}
-            className={cn('flex w-full justify-start px-3 font-normal', !displayValue && 'text-muted-foreground')}
+          <div
+            className={cn(
+              'flex w-full cursor-pointer items-center h-9 ps-3 pe-1 font-normal border border-input rounded-md text-sm shadow-sm',
+              !displayValue && 'text-muted-foreground',
+              (!clearable || !value) && 'pe-3',
+              disabled && 'opacity-50 cursor-not-allowed',
+              classNames?.trigger
+            )}
+            tabIndex={0}
           >
-            <CalendarIcon className="mr-2 size-4" />
-            {dislayFormat}
-          </Button>
+            <div className="flex-grow flex items-center">
+              <CalendarIcon className="mr-2 size-4" />
+              {dislayFormat}
+            </div>
+            {clearable && value && (
+              <Button
+                disabled={disabled}
+                variant="ghost"
+                size="sm"
+                role="button"
+                aria-label="Clear date"
+                className="size-6 p-1 ms-1"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  e.preventDefault();
+                  onChange(undefined);
+                  setOpen(false);
+                }}
+              >
+                <XCircle className="size-4" />
+              </Button>
+            )}
+          </div>
         )}
       </PopoverTrigger>
       <PopoverContent className="w-auto p-2">
@@ -275,7 +324,7 @@ export function DateTimePicker({
           />
         </div>
         <div className="flex flex-col gap-2">
-          {showTime && (
+          {!hideTime && (
             <TimePicker value={date} onChange={setDate} use12HourFormat={use12HourFormat} min={minDate} max={maxDate} />
           )}
           <div className="flex flex-row-reverse items-center justify-between">

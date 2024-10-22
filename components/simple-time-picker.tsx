@@ -38,7 +38,7 @@ const PM_VALUE = 1;
 export function SimpleTimePicker({
   value,
   onChange,
-  use12HourFormat = true,
+  use12HourFormat,
   min,
   max,
   disabled,
@@ -49,6 +49,7 @@ export function SimpleTimePicker({
   min?: Date;
   max?: Date;
   disabled?: boolean;
+  className?: string;
 }) {
   // hours24h = HH
   // hours12h = hh
@@ -224,11 +225,18 @@ export function SimpleTimePicker({
   return (
     <Popover open={open} onOpenChange={setOpen}>
       <PopoverTrigger asChild>
-        <Button disabled={disabled} variant="outline" role="combobox" aria-expanded={open} className="justify-between">
+        <div
+          role="combobox"
+          aria-expanded={open}
+          className={cn(
+            'flex h-9 px-3 items-center justify-between cursor-pointer font-normal border border-input rounded-md text-sm shadow-sm',
+            disabled && 'opacity-50 cursor-not-allowed'
+          )}
+        >
           <Clock className="mr-2 size-4" />
           {display}
           <ChevronDownIcon className="ml-2 size-4 shrink-0 opacity-50" />
-        </Button>
+        </div>
       </PopoverTrigger>
       <PopoverContent className="p-0" side="top">
         <div className="flex-col gap-2 p-2">

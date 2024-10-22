@@ -27,7 +27,7 @@ const meta = {
     max: { control: 'date' },
     timezone: { control: 'text' },
     disabled: { control: 'boolean' },
-    showTime: { control: 'boolean' },
+    hideTime: { control: 'boolean' },
     use12HourFormat: { control: 'boolean' },
   },
   // Use `fn` to spy on the onClick arg, which will appear in the actions panel once invoked: https://storybook.js.org/docs/essentials/actions#action-args
@@ -51,12 +51,14 @@ const meta = {
             </a>
           </div>
         )}
-        <Story />
+        <div className="flex justify-center">
+          <Story />
+        </div>
       </div>
     ),
   ],
   render: (args) => {
-    const [value, setValue] = useState(new Date());
+    const [value, setValue] = useState<Date | undefined>(new Date());
     return <DateTimePicker {...args} value={value} onChange={(date) => setValue(date)} />;
   },
 } satisfies Meta<typeof DateTimePicker>;
@@ -64,47 +66,59 @@ const meta = {
 export default meta;
 type Story = StoryObj<typeof meta>;
 
-export const Default: Story = {
-  tags: ['DEFAULT'],
+export const Default: Story = {};
+
+// export const TriggerSize: Story = {
+//   render: (args) => {
+//     const [value, setValue] = useState<Date | undefined>(undefined);
+//     return (
+//       <table>
+//         <thead>
+//           <tr>
+//             <th className="whitespace-nowrap">Type</th>
+//             <th style={{ width: '250px' }}>Component</th>
+//           </tr>
+//         </thead>
+//         <tbody>
+//           <tr>
+//             <td className="whitespace-nowrap text-end">Full width (default):</td>
+//             <td className="flex">
+//               <DateTimePicker value={value} onChange={setValue} />
+//             </td>
+//           </tr>
+//           <tr>
+//             <td className="whitespace-nowrap">Flexible width:</td>
+//             <td className="flex">
+//               <DateTimePicker value={value} onChange={setValue} classNames={{ trigger: 'w-fit' }} />
+//             </td>
+//           </tr>
+//           <tr>
+//             <td className="whitespace-nowrap text-end">Fixed width:</td>
+//             <td className="flex">
+//               <DateTimePicker value={value} onChange={setValue} classNames={{ trigger: 'w-[200px]' }} />
+//             </td>
+//           </tr>
+//         </tbody>
+//       </table>
+//     );
+//   },
+// };
+
+export const Clearable: Story = {
+  args: {
+    clearable: true,
+  },
 };
 
-export const _24HourFormat: Story = {
+export const _12HourFormat: Story = {
   args: {
-    use12HourFormat: false,
-  },
-  parameters: {
-    docs: {
-      source: {
-        code: `
-const [value, setValue] = useState(new Date());
-<DateTimePicker
-  value={value}
-  onChange={setValue}
-  use12HourFormat={false}
-/>
-          `,
-      },
-    },
+    use12HourFormat: true,
   },
 };
 
 export const DatePicker: Story = {
   args: {
-    showTime: false,
-  },
-  parameters: {
-    docs: {
-      source: {
-        code: `
-  const [value, setValue] = useState(new Date());
-  <DateTimePicker
-    value={value}
-    onChange={setValue}
-    showTime={false}
-  />
-          `,
-      },
-    },
+    hideTime: true,
   },
 };
 
@@ -128,7 +142,7 @@ export const MinMax: Story = {
     max: addYears(new Date(), 5),
   },
   render: (args) => {
-    const [value, setValue] = useState(new Date());
+    const [value, setValue] = useState<Date | undefined>(new Date());
     return (
       <div className="flex flex-col gap-4">
         <div>Min: {format(args.min!, 'MMM d, yyyy hh:mm:ss a')}</div>
