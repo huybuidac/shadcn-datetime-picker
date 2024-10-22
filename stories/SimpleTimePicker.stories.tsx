@@ -47,10 +47,10 @@ export const Default: Story = {
   },
 };
 
-export const _24HourFormat: Story = {
+export const _12HourFormat: Story = {
   args: {
     value: new Date(),
-    use12HourFormat: false,
+    use12HourFormat: true,
   },
 };
 
