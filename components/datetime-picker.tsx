@@ -209,7 +209,7 @@ export function DateTimePicker({
 
   return (
     <Popover open={open} onOpenChange={setOpen}>
-      <PopoverTrigger asChild>
+      <PopoverTrigger>
         {renderTrigger ? (
           renderTrigger({ value: displayValue, open, timezone, disabled, use12HourFormat })
         ) : (

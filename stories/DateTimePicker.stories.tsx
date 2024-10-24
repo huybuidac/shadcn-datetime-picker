@@ -7,6 +7,7 @@ import { addYears, subYears, format } from 'date-fns';
 
 import '../app/globals.css';
 import { useState } from 'react';
+import { DateTimeInput } from '@/components/datetime-input';
 
 const meta = {
   title: 'Datetime Picker',
@@ -68,41 +69,35 @@ type Story = StoryObj<typeof meta>;
 
 export const Default: Story = {};
 
-// export const TriggerSize: Story = {
-//   render: (args) => {
-//     const [value, setValue] = useState<Date | undefined>(undefined);
-//     return (
-//       <table>
-//         <thead>
-//           <tr>
-//             <th className="whitespace-nowrap">Type</th>
-//             <th style={{ width: '250px' }}>Component</th>
-//           </tr>
-//         </thead>
-//         <tbody>
-//           <tr>
-//             <td className="whitespace-nowrap text-end">Full width (default):</td>
-//             <td className="flex">
-//               <DateTimePicker value={value} onChange={setValue} />
-//             </td>
-//           </tr>
-//           <tr>
-//             <td className="whitespace-nowrap">Flexible width:</td>
-//             <td className="flex">
-//               <DateTimePicker value={value} onChange={setValue} classNames={{ trigger: 'w-fit' }} />
-//             </td>
-//           </tr>
-//           <tr>
-//             <td className="whitespace-nowrap text-end">Fixed width:</td>
-//             <td className="flex">
-//               <DateTimePicker value={value} onChange={setValue} classNames={{ trigger: 'w-[200px]' }} />
-//             </td>
-//           </tr>
-//         </tbody>
-//       </table>
-//     );
-//   },
-// };
+export const DateTimeInputPicker: Story = {
+  parameters: {
+    docs: {
+      source: {
+        code: `
+const [value, setValue] = useState<Date | undefined>(undefined);
+return (
+  <DateTimePicker
+    value={value}
+    onChange={setValue}
+    renderTrigger={({open, value}) => <DateTimeInput value={value} onChange={x => !open && setValue(x)} disabled={open} format="dd/MM/yyyy-hh:mm aa" />}
+  />
+);
+      `
+      }
+    }
+  },
+  render: (args) => {
+    const [value, setValue] = useState<Date | undefined>(undefined);
+    return (
+      <DateTimePicker
+        value={value}
+        onChange={setValue}
+        renderTrigger={({open, value}) => <DateTimeInput value={value} onChange={x => !open && setValue(x)} format="dd/MM/yyyy-hh:mm aa" disabled={open} />}
+      />
+    );
+  },
+};
+
 
 export const Clearable: Story = {
   args: {
