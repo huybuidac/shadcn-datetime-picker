@@ -30,7 +30,10 @@ To install the Shadcn Datetime Picker, follow these steps:
    yarn add react-day-picker@^9
    ```
 
-3. **Copy and paste** [datetime-picker.tsx](./components/datetime-picker.tsx) into your project.
+3. **Copy and paste** below codes into your project.
+- [datetime-picker.tsx](./components/datetime-picker.tsx)
+- [datetime-input.tsx](./components/datetime-input.tsx)
+- [simple-time-picker.tsx](./components/simple-time-picker.tsx)
 
 ### Usage
 
