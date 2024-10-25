@@ -14,7 +14,6 @@ const meta = {
   component: DateTimePicker,
   parameters: {
     // Optional parameter to center the component in the Canvas. More info: https://storybook.js.org/docs/configure/story-layout
-    layout: 'centered',
     storySource: {
       source: 'https://github.com/huybuidac/shadcn-datetime-picker',
     },
@@ -69,11 +68,7 @@ type Story = StoryObj<typeof meta>;
 
 export const Default: Story = {};
 
-export const DateTimeInputPicker: Story = {
-  parameters: {
-    docs: {
-      source: {
-        code: `
+const DateTimeInputPickerSource = `
 const [value, setValue] = useState<Date | undefined>(undefined);
 return (
   <DateTimePicker
@@ -82,22 +77,30 @@ return (
     renderTrigger={({open, value}) => <DateTimeInput value={value} onChange={x => !open && setValue(x)} disabled={open} format="dd/MM/yyyy-hh:mm aa" />}
   />
 );
-      `
-      }
-    }
+`;
+export const DateTimeInputPicker: Story = {
+  parameters: {
+    storySource: { source: DateTimeInputPickerSource },
+    docs: { source: { code: DateTimeInputPickerSource } },
   },
-  render: (args) => {
+  render: () => {
     const [value, setValue] = useState<Date | undefined>(undefined);
     return (
       <DateTimePicker
         value={value}
         onChange={setValue}
-        renderTrigger={({open, value}) => <DateTimeInput value={value} onChange={x => !open && setValue(x)} format="dd/MM/yyyy-hh:mm aa" disabled={open} />}
+        renderTrigger={({ open, value }) => (
+          <DateTimeInput
+            value={value}
+            onChange={(x) => !open && setValue(x)}
+            format="dd/MM/yyyy-hh:mm aa"
+            disabled={open}
+          />
+        )}
       />
     );
   },
 };
-
 
 export const Clearable: Story = {
   args: {
