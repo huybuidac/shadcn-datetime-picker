@@ -1,11 +1,11 @@
 import * as React from 'react';
 
 import { cn } from '@/lib/utils';
-import { Input } from './ui/input';
 import { format, parse, isValid, getYear } from 'date-fns';
 import { useRef, useState, useMemo, useEffect, useLayoutEffect, useCallback } from 'react';
 import { CalendarIcon } from 'lucide-react';
-import { Button } from './ui/button';
+import { Button } from '@/components/ui/button';
+import { useFormContext } from 'react-hook-form';
 
 type DateTimeInputProps = {
   className?: string;
@@ -14,6 +14,7 @@ type DateTimeInputProps = {
   format?: string;
   disabled?: boolean;
   hideCalendarIcon?: boolean;
+  onCalendarClick?: () => void;
 };
 
 // https://date-fns.org/v4.1.0/docs/format
@@ -63,25 +64,47 @@ const mergeRefs = (...refs: any) => {
 };
 const DateTimeInput = React.forwardRef<HTMLInputElement, DateTimeInputProps>((options: DateTimeInputProps, ref) => {
   const { format: formatProp, value, ...rest } = options;
+  const form = useFormContext();
+  useEffect(() => {
+    if (form?.formState.isSubmitted) {
+      setSegments(parseFormat(formatStr, value));
+    }
+  }, [form?.formState.isSubmitted]);
   const formatStr = React.useMemo(() => formatProp || 'dd/MM/yyyy-hh:mm aa', [formatProp]);
   const inputRef = useRef<HTMLInputElement>();
 
   const [segments, setSegments] = useState<Segment[]>([]);
-  const [curSegment, setCurrentSegment] = useState<Segment | undefined>(undefined);
+  const [selectedSegmentAt, setSelectedSegmentAt] = useState<number | undefined>(undefined);
+  const curSegment = useMemo(() => {
+    if (selectedSegmentAt === undefined || selectedSegmentAt < 0 || selectedSegmentAt >= segments.length)
+      return undefined;
+    return segments[selectedSegmentAt];
+  }, [segments, selectedSegmentAt]);
+  const setCurrentSegment = useCallback(
+    (segment: Segment | undefined) => {
+      const at = segments?.findIndex((s) => s.index === segment?.index);
+      at !== -1 && setSelectedSegmentAt(at);
+    },
+    [segments, setSelectedSegmentAt]
+  );
 
   const datetimeStr = useMemo(() => {
     return segments.map((s) => (s.value ? s.value.padStart(s.symbols.length, '0') : s.symbols)).join('');
   }, [segments]);
+  const validDatetimeStr = useMemo(() => {
+    return !!segments.some((s) => !s.value);
+  }, [segments]);
 
   useEffect(() => {
-    const date = parse(datetimeStr, formatStr, options.value || new Date());
+    if (!validDatetimeStr) return;
+    const date = parse(datetimeStr, formatStr, new Date(), {});
     const year = getYear(date);
     if (isValid(date) && year > 1900 && year < 2100) {
       options.onChange?.(date);
     }
-  }, [datetimeStr]);
+  }, [datetimeStr, value, validDatetimeStr]);
 
-  useLayoutEffect(() => {
+  useEffect(() => {
     setSegments(parseFormat(formatStr, value));
   }, [formatStr, value]);
 
@@ -123,39 +146,42 @@ const DateTimeInput = React.forwardRef<HTMLInputElement, DateTimeInputProps>((op
   const onSegmentNumberValueChange = useEventCallback(
     (num: string) => {
       if (!curSegment) return;
+      let segment = curSegment;
       let shouldNext = false;
-      if (curSegment.type !== 'period') {
-        const length = curSegment.symbols.length;
-        let newValue = curSegment.value.length < length ? curSegment.value + num : num;
-        let parsedDate = parse(newValue.padStart(length, '0'), curSegment.symbols, safeDate());
+      if (segment.type !== 'period') {
+        const length = segment.symbols.length;
+        const rawValue = parseInt(segment.value).toString();
+        let newValue = rawValue.length < length ? rawValue + num : num;
+        let parsedDate = parse(newValue.padStart(length, '0'), segment.symbols, safeDate());
         if (!isValid(parsedDate) && newValue.length > 1) {
           newValue = num;
-          parsedDate = parse(newValue, curSegment.symbols, safeDate());
+          parsedDate = parse(newValue, segment.symbols, safeDate());
         }
-        curSegment.value = newValue;
-        setSegments([...segments]);
-        shouldNext = curSegment.value.length === length;
+        const updatedSegments = segments.map((s) => (s.index === segment.index ? { ...segment, value: newValue } : s));
+        setSegments(updatedSegments);
+        segment = updatedSegments.find((s) => s.index === segment.index)!;
+        shouldNext = newValue.length === length;
         if (!shouldNext) {
-          switch (curSegment.type) {
+          switch (segment.type) {
             case 'month':
-              shouldNext = +curSegment.value > 1;
+              shouldNext = +newValue > 1;
               break;
             case 'date':
-              shouldNext = +curSegment.value > 3;
+              shouldNext = +newValue > 3;
               break;
             case 'hour':
-              shouldNext = +curSegment.value > (curSegment.symbols.includes('H') ? 2 : 1);
+              shouldNext = +newValue > (segment.symbols.includes('H') ? 2 : 1);
               break;
             case 'minute':
             case 'second':
-              shouldNext = +curSegment.value > 5;
+              shouldNext = +newValue > 5;
               break;
             default:
               break;
           }
         }
       }
-      shouldNext ? onSegmentChange('right') : setSelection(inputRef, curSegment);
+      shouldNext ? onSegmentChange('right') : setSelection(inputRef, segment);
     },
     [segments, curSegment]
   );
@@ -163,18 +189,22 @@ const DateTimeInput = React.forwardRef<HTMLInputElement, DateTimeInputProps>((op
   const onSegmentPeriodValueChange = useEventCallback(
     (key: string) => {
       if (curSegment?.type !== 'period') return;
+      let segment = curSegment;
       let ok = false;
+      let newValue = '';
       if (key?.toLowerCase() === 'a') {
-        curSegment.value = 'AM';
+        newValue = 'AM';
         ok = true;
       } else if (key?.toLowerCase() === 'p') {
-        curSegment.value = 'PM';
+        newValue = 'PM';
         ok = true;
       }
       if (ok) {
-        setSegments([...segments]);
+        const updatedSegments = segments.map((s) => (s.index === segment.index ? { ...segment, value: newValue } : s));
+        setSegments(updatedSegments);
+        segment = updatedSegments.find((s) => s.index === segment.index)!;
       }
-      setSelection(inputRef, curSegment);
+      setSelection(inputRef, segment);
     },
     [segments, curSegment]
   );
@@ -182,9 +212,10 @@ const DateTimeInput = React.forwardRef<HTMLInputElement, DateTimeInputProps>((op
   const onSegmentValueRemove = useEventCallback(() => {
     if (!curSegment) return;
     if (curSegment.value) {
-      curSegment.value = '';
-      setSegments([...segments]);
-      setSelection(inputRef, curSegment);
+      const updatedSegments = segments.map((s) => (s.index === curSegment.index ? { ...curSegment, value: '' } : s));
+      setSegments(updatedSegments);
+      const segment = updatedSegments.find((s) => s.index === curSegment.index)!;
+      setSelection(inputRef, segment);
     } else {
       onSegmentChange('left');
     }
@@ -193,8 +224,6 @@ const DateTimeInput = React.forwardRef<HTMLInputElement, DateTimeInputProps>((op
   const onKeyDown = useEventCallback((event: React.KeyboardEvent<HTMLInputElement>) => {
     const key = event.key;
     setSelection(inputRef, curSegment);
-
-    console.log('onKeyDown', key);
 
     switch (key) {
       case 'ArrowRight':
@@ -235,7 +264,7 @@ const DateTimeInput = React.forwardRef<HTMLInputElement, DateTimeInputProps>((op
       )}
     >
       {!options.hideCalendarIcon && (
-        <Button variant="ghost" size="icon">
+        <Button variant="ghost" size="icon" onClick={options.onCalendarClick}>
           <CalendarIcon className="size-4 text-muted-foreground" />
         </Button>
       )}
@@ -250,6 +279,7 @@ const DateTimeInput = React.forwardRef<HTMLInputElement, DateTimeInputProps>((op
         placeholder={formatStr}
         onChange={() => {}}
         disabled={options.disabled}
+        spellCheck={false}
       />
     </div>
   );
@@ -276,7 +306,12 @@ function parseFormat(formatStr: string, value?: Date) {
     if (!pattern) continue;
     if (pattern.type !== lastPattern) {
       symbols &&
-        views.push({ type: lastPattern, symbols, index: patternIndex, value: value ? format(value, symbols) : '' });
+        views.push({
+          type: lastPattern,
+          symbols,
+          index: patternIndex,
+          value: value ? format(value, symbols) : '',
+        });
       lastPattern = pattern?.type || '';
       symbols = c;
       patternIndex = index;
@@ -286,7 +321,12 @@ function parseFormat(formatStr: string, value?: Date) {
     index++;
   }
   symbols &&
-    views.push({ type: lastPattern, symbols, index: patternIndex, value: value ? format(value, symbols) : '' });
+    views.push({
+      type: lastPattern,
+      symbols,
+      index: patternIndex,
+      value: value ? format(value, symbols) : '',
+    });
   return views;
 }
 
@@ -302,7 +342,6 @@ function setSelection(ref: React.MutableRefObject<HTMLInputElement | undefined>,
 }
 
 function safeSetSelection(element: HTMLInputElement, selectionStart: number, selectionEnd: number) {
-  console.log('safeSetSelection', selectionStart, selectionEnd);
   requestAnimationFrame(() => {
     if (document.activeElement === element) {
       if (isAndroid()) {

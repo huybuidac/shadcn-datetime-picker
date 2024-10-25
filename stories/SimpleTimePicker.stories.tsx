@@ -10,12 +10,12 @@ import '../app/globals.css';
 import { useState } from 'react';
 
 // More on how to set up stories at: https://storybook.js.org/docs/writing-stories#default-export
-let value = new Date();
 const meta = {
   title: 'Simple Time Picker',
   component: SimpleTimePicker,
   parameters: {
     // Optional parameter to center the component in the Canvas. More info: https://storybook.js.org/docs/configure/story-layout
+    layout: 'centered',
   },
   tags: ['autodocs'],
   // More on argTypes: https://storybook.js.org/docs/api/argtypes

@@ -121,6 +121,7 @@ export type DateTimeRenderTriggerProps = {
   timezone?: string;
   disabled?: boolean;
   use12HourFormat?: boolean;
+  setOpen: (open: boolean) => void;
 };
 
 export function DateTimePicker({
@@ -209,9 +210,9 @@ export function DateTimePicker({
 
   return (
     <Popover open={open} onOpenChange={setOpen}>
-      <PopoverTrigger>
+      <PopoverTrigger asChild>
         {renderTrigger ? (
-          renderTrigger({ value: displayValue, open, timezone, disabled, use12HourFormat })
+          renderTrigger({ value: displayValue, open, timezone, disabled, use12HourFormat, setOpen })
         ) : (
           <div
             className={cn(

@@ -1,9 +1,6 @@
 import type { Meta, StoryObj } from '@storybook/react';
-import { fn } from '@storybook/test';
 
 import { DateTimeInput } from '../components/datetime-input';
-
-import { addYears, subYears, format } from 'date-fns';
 
 import '../app/globals.css';
 import { useState } from 'react';
@@ -13,6 +10,7 @@ const meta = {
   component: DateTimeInput,
   parameters: {
     // Optional parameter to center the component in the Canvas. More info: https://storybook.js.org/docs/configure/story-layout
+    layout: 'centered',
     storySource: {
       source: 'https://github.com/huybuidac/shadcn-datetime-picker',
     },
