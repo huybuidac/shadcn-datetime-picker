@@ -2,7 +2,7 @@ import * as React from 'react';
 
 import { cn } from '@/lib/utils';
 import { Input } from './ui/input';
-import { format, parse, isValid, setDate } from 'date-fns';
+import { format, parse, isValid, getYear } from 'date-fns';
 import { useRef, useState, useMemo, useEffect, useLayoutEffect, useCallback } from 'react';
 import { CalendarIcon } from 'lucide-react';
 import { Button } from './ui/button';
@@ -75,7 +75,8 @@ const DateTimeInput = React.forwardRef<HTMLInputElement, DateTimeInputProps>((op
 
   useEffect(() => {
     const date = parse(datetimeStr, formatStr, options.value || new Date());
-    if (isValid(date)) {
+    const year = getYear(date);
+    if (isValid(date) && year > 1900 && year < 2100) {
       options.onChange?.(date);
     }
   }, [datetimeStr]);
