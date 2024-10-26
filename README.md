@@ -20,10 +20,7 @@ Demo: https://shadcn-datetime-picker-pro.vercel.app/
 
 https://shadcn-datetime-picker-pro.vercel.app/?path=/story/datetimepicker--date-time-input-picker-in-form
 
-<video width="500px" controls>
-  <source src="https://github.com/user-attachments/assets/8634d7b4-e28e-43a1-be18-51c08f5ddcf2" type="video/mp4">
-  Your browser does not support the video tag.
-</video>
+https://github.com/user-attachments/assets/1a14076d-cff7-4068-af10-d61a2ff9284b
 
 ### Installation
 
