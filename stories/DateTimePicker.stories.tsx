@@ -1,20 +1,25 @@
 import type { Meta, StoryObj } from '@storybook/react';
 import { fn } from '@storybook/test';
+import { z } from 'zod';
 
 import { DateTimePicker } from '../components/datetime-picker';
+import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from '../components/ui/form';
+import { zodResolver } from "@hookform/resolvers/zod"
 
 import { addYears, subYears, format } from 'date-fns';
 
 import '../app/globals.css';
 import { useState } from 'react';
 import { DateTimeInput } from '@/components/datetime-input';
+import { useForm } from 'react-hook-form';
+import { Button } from '@/components/ui/button';
 
 const meta = {
-  title: 'Datetime Picker',
+  title: 'DateTimePicker',
   component: DateTimePicker,
   parameters: {
     // Optional parameter to center the component in the Canvas. More info: https://storybook.js.org/docs/configure/story-layout
-    layout: 'centered',
+    // layout: 'centered',
     storySource: {
       source: 'https://github.com/huybuidac/shadcn-datetime-picker',
     },
@@ -30,6 +35,9 @@ const meta = {
     disabled: { control: 'boolean' },
     hideTime: { control: 'boolean' },
     use12HourFormat: { control: 'boolean' },
+    timePicker: { control: 'object' },
+    clearable: { control: 'boolean' },
+    classNames: { control: 'object' },
   },
   // Use `fn` to spy on the onClick arg, which will appear in the actions panel once invoked: https://storybook.js.org/docs/essentials/actions#action-args
   args: {
@@ -38,7 +46,7 @@ const meta = {
   },
   decorators: [
     (Story, info) => (
-      <div className="flex flex-col gap-4">
+      <div className="flex flex-col items-center gap-4">
         {info.name === 'Default' && (
           <div className="flex items-center space-x-2">
             <span className="font-semibold">Repository:</span>
@@ -76,11 +84,12 @@ return (
     value={value}
     onChange={setValue}
     use12HourFormat
+    timePicker={{ hour: true, minute: true }}
     renderTrigger={({ open, value, setOpen }) => (
       <DateTimeInput
         value={value}
         onChange={(x) => !open && setValue(x)}
-        format="MM/dd/yyyy hh:mm aa"
+        format="dd/MM/yyyy hh:mm aa"
         disabled={open}
         onCalendarClick={() => setOpen(!open)}
       />
@@ -100,16 +109,120 @@ export const DateTimeInputPicker: Story = {
         value={value}
         onChange={setValue}
         use12HourFormat
+        timePicker={{ hour: true, minute: true }}
         renderTrigger={({ open, value, setOpen }) => (
           <DateTimeInput
             value={value}
             onChange={(x) => !open && setValue(x)}
-            format="MM/dd/yyyy hh:mm aa"
+            format="dd/MM/yyyy hh:mm aa"
             disabled={open}
             onCalendarClick={() => setOpen(!open)}
           />
         )}
       />
+    );
+  },
+};
+
+const DateTimeInputPickerInFormSource = `
+const formSchema = z.object({
+  date: z.date(),
+});
+const form = useForm<z.infer<typeof formSchema>>({
+  resolver: zodResolver(formSchema),
+  defaultValues: {
+    date: undefined,
+  },
+});
+function onSubmit(values: z.infer<typeof formSchema>) {
+  console.log('onSubmit', values);
+}
+return (
+  <Form {...form}>
+    <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
+      <FormField
+        control={form.control}
+        name="date"
+        render={({ field }) => (
+          <FormItem>
+            <FormLabel>Datetime</FormLabel>
+            <FormControl>
+              <DateTimePicker
+                value={field.value}
+                onChange={field.onChange}
+                use12HourFormat
+                timePicker={{ hour: true, minute: true }}
+                renderTrigger={({ open, value, setOpen }) => (
+                  <DateTimeInput
+                    value={value}
+                    onChange={(x) => !open && field.onChange(x)}
+                    format="dd/MM/yyyy hh:mm aa"
+                    disabled={open}
+                    onCalendarClick={() => setOpen(!open)}
+                  />
+                )}
+              />
+            </FormControl>
+            <FormMessage />
+          </FormItem>
+        )}
+      />
+      <Button className='mt-4' type="submit">Submit</Button>
+    </form>
+  </Form>
+);
+`
+export const DateTimeInputPickerInForm: Story = {
+  parameters: {
+    storySource: { source: DateTimeInputPickerInFormSource },
+    docs: { source: { code: DateTimeInputPickerInFormSource } },
+  },
+  render: () => {
+    const formSchema = z.object({
+      date: z.date(),
+    });
+    const form = useForm<z.infer<typeof formSchema>>({
+      resolver: zodResolver(formSchema),
+      defaultValues: {
+        date: undefined,
+      },
+    });
+    function onSubmit(values: z.infer<typeof formSchema>) {
+      console.log('onSubmit', values);
+    }
+    return (
+      <Form {...form}>
+        <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
+          <FormField
+            control={form.control}
+            name="date"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Datetime</FormLabel>
+                <FormControl>
+                  <DateTimePicker
+                    value={field.value}
+                    onChange={field.onChange}
+                    use12HourFormat
+                    timePicker={{ hour: true, minute: true }}
+                    renderTrigger={({ open, value, setOpen }) => (
+                      <DateTimeInput
+                        value={value}
+                        onChange={(x) => !open && field.onChange(x)}
+                        format="dd/MM/yyyy hh:mm aa"
+                        disabled={open}
+                        onCalendarClick={() => setOpen(!open)}
+                      />
+                    )}
+                  />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+          <Button className='mt-4' type="submit">Submit</Button>
+        </form>
+      </Form>
     );
   },
 };

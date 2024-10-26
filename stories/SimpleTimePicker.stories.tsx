@@ -11,11 +11,10 @@ import { useState } from 'react';
 
 // More on how to set up stories at: https://storybook.js.org/docs/writing-stories#default-export
 const meta = {
-  title: 'Simple Time Picker',
+  title: 'SimpleTimePicker',
   component: SimpleTimePicker,
   parameters: {
     // Optional parameter to center the component in the Canvas. More info: https://storybook.js.org/docs/configure/story-layout
-    layout: 'centered',
   },
   tags: ['autodocs'],
   // More on argTypes: https://storybook.js.org/docs/api/argtypes
@@ -31,6 +30,13 @@ const meta = {
   args: {
     onChange: fn(),
   },
+  decorators: [
+    (Story, info) => (
+      <div className="flex flex-col items-center gap-4">
+        <Story />
+      </div>
+    ),
+  ],
   render: (args) => {
     const [value, setValue] = useState(args.value || new Date());
     return <SimpleTimePicker {...args} value={value} onChange={(date) => setValue(date)} />;

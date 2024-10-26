@@ -6,11 +6,10 @@ import '../app/globals.css';
 import { useState } from 'react';
 
 const meta = {
-  title: 'Datetime Input',
+  title: 'DateTimeInput',
   component: DateTimeInput,
   parameters: {
     // Optional parameter to center the component in the Canvas. More info: https://storybook.js.org/docs/configure/story-layout
-    layout: 'centered',
     storySource: {
       source: 'https://github.com/huybuidac/shadcn-datetime-picker',
     },
@@ -25,7 +24,7 @@ const meta = {
   },
   decorators: [
     (Story, info) => (
-      <div className="flex flex-col gap-4">
+      <div className="flex flex-col items-center gap-4">
         {info.name === 'Default' && (
           <div className="flex items-center space-x-2">
             <span className="font-semibold">Repository:</span>

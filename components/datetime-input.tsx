@@ -3,9 +3,11 @@ import * as React from 'react';
 import { cn } from '@/lib/utils';
 import { format, parse, isValid, getYear } from 'date-fns';
 import { useRef, useState, useMemo, useEffect, useLayoutEffect, useCallback } from 'react';
-import { CalendarIcon } from 'lucide-react';
+import { CalendarIcon, CircleAlert, CircleCheck } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useFormContext } from 'react-hook-form';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { TZDate } from 'react-day-picker';
 
 type DateTimeInputProps = {
   className?: string;
@@ -13,6 +15,8 @@ type DateTimeInputProps = {
   onChange?: (date?: Date) => void;
   format?: string;
   disabled?: boolean;
+  clearable?: boolean;
+  timezone?: string;
   hideCalendarIcon?: boolean;
   onCalendarClick?: () => void;
 };
@@ -63,18 +67,25 @@ const mergeRefs = (...refs: any) => {
   };
 };
 const DateTimeInput = React.forwardRef<HTMLInputElement, DateTimeInputProps>((options: DateTimeInputProps, ref) => {
-  const { format: formatProp, value, ...rest } = options;
+  const { format: formatProp, value: _value, timezone, ...rest } = options;
+  const value = useMemo(() => _value ? new TZDate(_value, timezone) : undefined, [_value, timezone]);
   const form = useFormContext();
-  useEffect(() => {
-    if (form?.formState.isSubmitted) {
-      setSegments(parseFormat(formatStr, value));
-    }
-  }, [form?.formState.isSubmitted]);
   const formatStr = React.useMemo(() => formatProp || 'dd/MM/yyyy-hh:mm aa', [formatProp]);
   const inputRef = useRef<HTMLInputElement>();
 
   const [segments, setSegments] = useState<Segment[]>([]);
   const [selectedSegmentAt, setSelectedSegmentAt] = useState<number | undefined>(undefined);
+
+  useEffect(() => {
+    if (form?.formState.isSubmitted) {
+      setSegments(parseFormat(formatStr, value));
+    }
+  }, [form?.formState.isSubmitted]);
+  useEffect(() => {
+    // console.error('valueChanged', {formatStr, inputStr, value});
+    setSegments(parseFormat(formatStr, value));
+  }, [formatStr, value]);
+
   const curSegment = useMemo(() => {
     if (selectedSegmentAt === undefined || selectedSegmentAt < 0 || selectedSegmentAt >= segments.length)
       return undefined;
@@ -88,25 +99,30 @@ const DateTimeInput = React.forwardRef<HTMLInputElement, DateTimeInputProps>((op
     [segments, setSelectedSegmentAt]
   );
 
-  const datetimeStr = useMemo(() => {
+  const validSegments = useMemo(() => segments.filter((s) => s.type !== 'space'), [segments]);
+  const inputStr = useMemo(() => {
     return segments.map((s) => (s.value ? s.value.padStart(s.symbols.length, '0') : s.symbols)).join('');
   }, [segments]);
-  const validDatetimeStr = useMemo(() => {
-    return !!segments.some((s) => !s.value);
-  }, [segments]);
+  const areAllSegmentsEmpty = useMemo(() => validSegments.every((s) => !s.value), [validSegments]);
 
-  useEffect(() => {
-    if (!validDatetimeStr) return;
-    const date = parse(datetimeStr, formatStr, new Date(), {});
+  const inputValue = useMemo(() => {
+    const allHasValue = !validSegments.some((s) => !s.value);
+    if (!allHasValue) return;
+    const date = parse(inputStr, formatStr, value || new TZDate(new Date(), timezone));
     const year = getYear(date);
+    // console.log('inputValue', {allHasValue, validSegments, inputStr, formatStr, date, year});
     if (isValid(date) && year > 1900 && year < 2100) {
-      options.onChange?.(date);
+      return date;
     }
-  }, [datetimeStr, value, validDatetimeStr]);
-
+  }, [validSegments, inputStr, formatStr]);
   useEffect(() => {
-    setSegments(parseFormat(formatStr, value));
-  }, [formatStr, value]);
+    if (!inputValue) return;
+    if (value?.getTime() !== inputValue.getTime()) {
+      // console.log('inputValueChanged', {formatStr, inputStr, value, inputValue, });
+      options.onChange?.(inputValue);
+    }
+  }, [inputValue]);
+
 
   const onClick = useEventCallback(
     (event: React.MouseEvent<HTMLInputElement>) => {
@@ -152,10 +168,10 @@ const DateTimeInput = React.forwardRef<HTMLInputElement, DateTimeInputProps>((op
         const length = segment.symbols.length;
         const rawValue = parseInt(segment.value).toString();
         let newValue = rawValue.length < length ? rawValue + num : num;
-        let parsedDate = parse(newValue.padStart(length, '0'), segment.symbols, safeDate());
+        let parsedDate = parse(newValue.padStart(length, '0'), segment.symbols, safeDate(timezone));
         if (!isValid(parsedDate) && newValue.length > 1) {
           newValue = num;
-          parsedDate = parse(newValue, segment.symbols, safeDate());
+          parsedDate = parse(newValue, segment.symbols, safeDate(timezone));
         }
         const updatedSegments = segments.map((s) => (s.index === segment.index ? { ...segment, value: newValue } : s));
         setSegments(updatedSegments);
@@ -275,12 +291,30 @@ const DateTimeInput = React.forwardRef<HTMLInputElement, DateTimeInputProps>((op
         onBlur={() => setIsFocused(false)}
         onClick={onClick}
         onKeyDown={onKeyDown}
-        value={datetimeStr}
+        value={inputStr}
         placeholder={formatStr}
         onChange={() => {}}
         disabled={options.disabled}
         spellCheck={false}
       />
+      <div className="me-3">
+        {inputValue ? (
+          <CircleCheck className="size-4 text-green-500" />
+        ) : (
+          <TooltipProvider>
+            <Tooltip>
+              <TooltipTrigger className="flex items-center justify-center">
+                <CircleAlert className={cn('size-4', !areAllSegmentsEmpty && 'text-red-500')} />
+              </TooltipTrigger>
+              <TooltipContent>
+                <p>
+                  Please enter a valid value. The input cannot be empty and must be within the range of years 1900 to 2100.
+                </p>
+              </TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
+        )}
+      </div>
     </div>
   );
 });
@@ -330,8 +364,8 @@ function parseFormat(formatStr: string, value?: Date) {
   return views;
 }
 
-const safeDate = () => {
-  return new Date('2000-01-01T00:00:00');
+const safeDate = (timezone?: string) => {
+  return new TZDate('2000-01-01T00:00:00', timezone);
 };
 
 const isAndroid = () => /Android/i.test(navigator.userAgent);
