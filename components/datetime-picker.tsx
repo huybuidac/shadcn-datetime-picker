@@ -693,7 +693,7 @@ function TimePicker({
                 </div>
               </ScrollArea>
             )}
-            {timePicker && timePicker.minute && (
+            {(!timePicker || timePicker.minute) && (
               <ScrollArea className="h-full flex-grow">
                 <div className="flex grow flex-col items-stretch overflow-y-auto pe-2 pb-48">
                   {minutes.map((v) => (
@@ -710,7 +710,7 @@ function TimePicker({
                 </div>
               </ScrollArea>
             )}
-            {timePicker && timePicker.second && (
+            {(!timePicker || timePicker.second) && (
               <ScrollArea className="h-full flex-grow">
                 <div className="flex grow flex-col items-stretch overflow-y-auto pe-2 pb-48">
                   {seconds.map((v) => (
