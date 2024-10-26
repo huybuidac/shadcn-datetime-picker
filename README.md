@@ -16,6 +16,15 @@ Demo: https://shadcn-datetime-picker-pro.vercel.app/
 
 ![Simple DateTime Picker](images/simple.png)
 
+### Demo DateTime Picker Input
+
+https://shadcn-datetime-picker-pro.vercel.app/?path=/story/datetimepicker--date-time-input-picker-in-form
+
+<video width="500px" controls>
+  <source src="https://github.com/user-attachments/assets/8634d7b4-e28e-43a1-be18-51c08f5ddcf2" type="video/mp4">
+  Your browser does not support the video tag.
+</video>
+
 ### Installation
 
 To install the Shadcn Datetime Picker, follow these steps:
