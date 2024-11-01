@@ -1,6 +1,12 @@
 # Shadcn Datetime Picker
 
-Shadcn Datetime Picker is a fully-featured, customizable component for selecting dates and times, built specifically for the Shadcn UI ecosystem. Designed for seamless integration with React applications, this picker offers advanced functionality such as timezone support, month/year selection, and minimum/maximum date restrictions.
+![Simple DateTime Picker](images/simple.png)
+
+## Overview
+
+Shadcn Datetime Picker: The Ultimate React Component for Date and Time Selection
+
+Shadcn Datetime Picker is a powerful and fully customizable component that simplifies date and time selection in React applications built with the Shadcn UI framework. With advanced features designed to improve user experience, this datetime picker offers seamless integration and a responsive, user-friendly interface. Whether you need a robust datetime, date, or time picker, Shadcn Datetime Picker provides the flexibility and functionality needed for modern applications.
 
 **Key Features**:
 - **Datetime Picker**: Select both date and time in a single intuitive component.
@@ -13,8 +19,6 @@ Shadcn Datetime Picker is a fully-featured, customizable component for selecting
 This component is designed to be lightweight, responsive, and highly customizable, making it a must-have for any project using Shadcn UI. Improve the user experience of your React apps with a reliable and flexible datetime picker solution.
 
 Demo: https://shadcn-datetime-picker-pro.vercel.app/
-
-![Simple DateTime Picker](images/simple.png)
 
 ### Demo DateTime Picker Input
 
