@@ -170,7 +170,7 @@ export function DateTimePicker({
     },
     [setDate, setMonth]
   );
-  const onSumbit = useCallback(() => {
+  const onSubmit = useCallback(() => {
     onChange(new Date(date));
     setOpen(false);
   }, [date, onChange]);
@@ -342,7 +342,7 @@ export function DateTimePicker({
             />
           )}
           <div className="flex flex-row-reverse items-center justify-between">
-            <Button className="ms-2 h-7 px-2" onClick={onSumbit}>
+            <Button className="ms-2 h-7 px-2" onClick={onSubmit}>
               Done
             </Button>
             {timezone && (
