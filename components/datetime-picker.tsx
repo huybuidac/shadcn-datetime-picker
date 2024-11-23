@@ -57,6 +57,12 @@ const PM_VALUE = 1;
 
 export type DateTimePickerProps = {
   /**
+   * The modality of the popover. When set to true, interaction with outside elements will be disabled and only popover content will be visible to screen readers.
+   * If you want to use the datetime picker inside a dialog, you should set this to true.
+   * @default false
+   */
+  modal?: boolean;
+  /**
    * The datetime value to display and control.
    */
   value: Date | undefined;
@@ -142,6 +148,7 @@ export function DateTimePicker({
   clearable,
   classNames,
   timePicker,
+  modal = false,
   ...props
 }: DateTimePickerProps & CalendarProps) {
   const [open, setOpen] = useState(false);
@@ -215,7 +222,7 @@ export function DateTimePicker({
   }, [displayValue, hideTime, use12HourFormat]);
 
   return (
-    <Popover open={open} onOpenChange={setOpen}>
+    <Popover open={open} onOpenChange={setOpen} modal={modal}>
       <PopoverTrigger asChild>
         {renderTrigger ? (
           renderTrigger({ value: displayValue, open, timezone, disabled, use12HourFormat, setOpen })

@@ -42,6 +42,7 @@ export function SimpleTimePicker({
   min,
   max,
   disabled,
+  modal,
 }: {
   use12HourFormat?: boolean;
   value: Date;
@@ -50,6 +51,7 @@ export function SimpleTimePicker({
   max?: Date;
   disabled?: boolean;
   className?: string;
+  modal?: boolean;
 }) {
   // hours24h = HH
   // hours12h = hh
@@ -223,7 +225,7 @@ export function SimpleTimePicker({
   }, [value, use12HourFormat]);
 
   return (
-    <Popover open={open} onOpenChange={setOpen}>
+    <Popover open={open} onOpenChange={setOpen} modal={modal}>
       <PopoverTrigger asChild>
         <div
           role="combobox"

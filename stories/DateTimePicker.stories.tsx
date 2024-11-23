@@ -4,7 +4,7 @@ import { z } from 'zod';
 
 import { DateTimePicker } from '../components/datetime-picker';
 import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from '../components/ui/form';
-import { zodResolver } from "@hookform/resolvers/zod"
+import { zodResolver } from '@hookform/resolvers/zod';
 
 import { addYears, subYears, format } from 'date-fns';
 
@@ -13,6 +13,8 @@ import { useState } from 'react';
 import { DateTimeInput } from '@/components/datetime-input';
 import { useForm } from 'react-hook-form';
 import { Button } from '@/components/ui/button';
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { SimpleTimePicker } from '@/components/simple-time-picker';
 
 const meta = {
   title: 'DateTimePicker',
@@ -171,7 +173,7 @@ return (
     </form>
   </Form>
 );
-`
+`;
 export const DateTimeInputPickerInForm: Story = {
   parameters: {
     storySource: { source: DateTimeInputPickerInFormSource },
@@ -220,7 +222,9 @@ export const DateTimeInputPickerInForm: Story = {
               </FormItem>
             )}
           />
-          <Button className='mt-4' type="submit">Submit</Button>
+          <Button className="mt-4" type="submit">
+            Submit
+          </Button>
         </form>
       </Form>
     );
@@ -272,6 +276,36 @@ export const MinMax: Story = {
         <div>Max: {format(args.max!, 'MMM d, yyyy hh:mm:ss a')}</div>
         <DateTimePicker {...args} value={value} onChange={(date) => setValue(date)} />
       </div>
+    );
+  },
+};
+
+export const InsideDialog: Story = {
+  args: {
+    modal: true,
+  },
+  render: (args) => {
+    const [value, setValue] = useState<Date | undefined>(new Date());
+    const [timeValue, setTimeValue] = useState<Date>(new Date());
+    return (
+      <Dialog>
+        <DialogTrigger asChild>
+          <Button variant="outline">Edit Profile</Button>
+        </DialogTrigger>
+        <DialogContent className="sm:max-w-[425px]">
+          <DialogHeader>
+            <DialogTitle>Edit profile</DialogTitle>
+            <DialogDescription>Make changes to your profile here. Click save when you're done.</DialogDescription>
+          </DialogHeader>
+          <div className="grid gap-4 py-4">
+            <DateTimePicker {...args} value={value} onChange={(date) => setValue(date)} />
+            <SimpleTimePicker {...args} value={timeValue} onChange={(date) => setTimeValue(date)} />
+          </div>
+          <DialogFooter>
+            <Button type="submit">Save changes</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     );
   },
 };
