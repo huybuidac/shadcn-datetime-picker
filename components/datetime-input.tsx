@@ -1,7 +1,14 @@
+/**
+ * Shadcn Datetime Input
+ * Check out the live demo at https://shadcn-datetime-picker-pro.vercel.app/
+ * Find the latest source code at https://github.com/huybuidac/shadcn-datetime-picker
+ */
+/* eslint-disable */
+/** biome-ignore-all lint: third-party component */
 import * as React from 'react';
 
 import { cn } from '@/lib/utils';
-import { format, parse, isValid, getYear } from 'date-fns';
+import { format, parse, isValid, getYear, endOfMonth } from 'date-fns';
 import { useRef, useState, useMemo, useEffect, useLayoutEffect, useCallback } from 'react';
 import { CalendarIcon, CircleAlert, CircleCheck } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -76,13 +83,21 @@ const DateTimeInput = React.forwardRef<HTMLInputElement, DateTimeInputProps>((op
   const [segments, setSegments] = useState<Segment[]>([]);
   const [selectedSegmentAt, setSelectedSegmentAt] = useState<number | undefined>(undefined);
 
+  // Tracks the (value, format) pair we just emitted, so we can skip re-syncing
+  // segments from a value the parent merely echoed back. Without this, lossy or
+  // non-bijective format(parse(s)) round-trips (e.g., across historical timezone
+  // offset shifts) can drive an infinite onChange loop.
+  const echoedRef = useRef<{ t: number | undefined; fmt: string } | undefined>(undefined);
+
   useEffect(() => {
     if (form?.formState.isSubmitted) {
       setSegments(parseFormat(formatStr, value));
     }
   }, [form?.formState.isSubmitted]);
   useEffect(() => {
-    // console.error('valueChanged', {formatStr, inputStr, value});
+    if (echoedRef.current && value?.getTime() === echoedRef.current.t && formatStr === echoedRef.current.fmt) {
+      return;
+    }
     setSegments(parseFormat(formatStr, value));
   }, [formatStr, value]);
 
@@ -118,7 +133,7 @@ const DateTimeInput = React.forwardRef<HTMLInputElement, DateTimeInputProps>((op
   useEffect(() => {
     if (!inputValue) return;
     if (value?.getTime() !== inputValue.getTime()) {
-      // console.log('inputValueChanged', {formatStr, inputStr, value, inputValue, });
+      echoedRef.current = { t: inputValue.getTime(), fmt: formatStr };
       options.onChange?.(inputValue);
     }
   }, [inputValue]);
@@ -157,6 +172,149 @@ const DateTimeInput = React.forwardRef<HTMLInputElement, DateTimeInputProps>((op
       }
     },
     [segments, curSegment]
+  );
+
+  const onSegmentValueStep = useEventCallback(
+    (direction: 'up' | 'down') => {
+      if (!curSegment || curSegment.type === 'space') return;
+      const delta = direction === 'up' ? 1 : -1;
+
+      const findSeg = (type: SegmentType) => segments.find((s) => s.type === type);
+      const yearSeg = findSeg('year');
+      const monthSeg = findSeg('month');
+      const dateSeg = findSeg('date');
+      const hourSeg = findSeg('hour');
+      const minuteSeg = findSeg('minute');
+      const secondSeg = findSeg('second');
+      const periodSeg = findSeg('period');
+      const is12h = hourSeg ? hourSeg.symbols.charAt(0) === 'h' : false;
+
+      const now = new TZDate(value || new Date(), timezone);
+
+      const commit = (updates: Partial<Record<SegmentType, string>>) => {
+        const updated = segments.map((s) => {
+          const newVal = updates[s.type];
+          return newVal !== undefined ? { ...s, value: newVal } : s;
+        });
+        setSegments(updated);
+        const focused = updated.find((s) => s.index === curSegment.index);
+        if (focused) setSelection(inputRef, focused);
+      };
+
+      if (curSegment.type === 'period') {
+        const next = !curSegment.value
+          ? now.getHours() >= 12 ? 'PM' : 'AM'
+          : curSegment.value === 'AM' ? 'PM' : 'AM';
+        commit({ period: next });
+        return;
+      }
+
+      const baseYear = yearSeg?.value ? parseInt(yearSeg.value) : now.getFullYear();
+      const baseMonth = monthSeg?.value ? parseInt(monthSeg.value) - 1 : now.getMonth();
+      const baseDate = dateSeg?.value ? parseInt(dateSeg.value) : now.getDate();
+      let baseHour: number;
+      if (hourSeg?.value) {
+        const h = parseInt(hourSeg.value);
+        if (is12h) {
+          const isPM = periodSeg?.value === 'PM';
+          baseHour = (h % 12) + (isPM ? 12 : 0);
+        } else {
+          baseHour = h;
+        }
+      } else {
+        baseHour = now.getHours();
+      }
+      const baseMinute = minuteSeg?.value ? parseInt(minuteSeg.value) : now.getMinutes();
+      const baseSecond = secondSeg?.value ? parseInt(secondSeg.value) : now.getSeconds();
+
+      const dt = new TZDate(value || new Date(), timezone);
+      dt.setFullYear(baseYear, baseMonth, 1);
+      dt.setHours(baseHour, baseMinute, baseSecond, 0);
+      const lastDay = endOfMonth(dt).getDate();
+      dt.setDate(Math.min(baseDate, lastDay));
+
+      // First press on an empty segment: fill with base value, no step.
+      if (!curSegment.value) {
+        const updates: Partial<Record<SegmentType, string>> = {
+          [curSegment.type]: format(dt, curSegment.symbols),
+        };
+        if (curSegment.type === 'hour' && is12h && periodSeg && !periodSeg.value) {
+          updates.period = now.getHours() >= 12 ? 'PM' : 'AM';
+        }
+        commit(updates);
+        return;
+      }
+
+      switch (curSegment.type) {
+        case 'year': {
+          let y = baseYear + delta;
+          if (y < 1900) y = 2099;
+          if (y > 2099) y = 1900;
+          dt.setFullYear(y);
+          commit({ year: format(dt, curSegment.symbols) });
+          break;
+        }
+        case 'month': {
+          let m = baseMonth + delta;
+          if (m < 0) m = 11;
+          if (m > 11) m = 0;
+          dt.setDate(1);
+          dt.setMonth(m);
+          commit({ month: format(dt, curSegment.symbols) });
+          break;
+        }
+        case 'date': {
+          let d = baseDate + delta;
+          if (d < 1) d = lastDay;
+          if (d > lastDay) d = 1;
+          dt.setDate(d);
+          commit({ date: format(dt, curSegment.symbols) });
+          break;
+        }
+        case 'hour': {
+          if (is12h) {
+            const displayedH = parseInt(hourSeg!.value);
+            let h = displayedH + delta;
+            let nextPeriod = periodSeg?.value || (now.getHours() >= 12 ? 'PM' : 'AM');
+            // Crossing the 11/12 boundary flips AM/PM in either direction.
+            if ((delta > 0 && displayedH === 11) || (delta < 0 && displayedH === 12)) {
+              nextPeriod = nextPeriod === 'AM' ? 'PM' : 'AM';
+            }
+            if (h < 1) h = 12;
+            if (h > 12) h = 1;
+            const updates: Partial<Record<SegmentType, string>> = {
+              hour: String(h).padStart(curSegment.symbols.length, '0'),
+            };
+            if (periodSeg) updates.period = nextPeriod;
+            commit(updates);
+          } else {
+            let h = baseHour + delta;
+            if (h < 0) h = 23;
+            if (h > 23) h = 0;
+            dt.setHours(h);
+            commit({ hour: format(dt, curSegment.symbols) });
+          }
+          break;
+        }
+        case 'minute': {
+          let m = baseMinute + delta;
+          if (m < 0) m = 59;
+          if (m > 59) m = 0;
+          dt.setMinutes(m);
+          commit({ minute: format(dt, curSegment.symbols) });
+          break;
+        }
+        case 'second': {
+          let s = baseSecond + delta;
+          if (s < 0) s = 59;
+          if (s > 59) s = 0;
+          dt.setSeconds(s);
+          commit({ second: format(dt, curSegment.symbols) });
+          break;
+        }
+      }
+    },
+    [segments, curSegment, value, timezone]
   );
 
   const onSegmentNumberValueChange = useEventCallback(
@@ -247,11 +405,11 @@ const DateTimeInput = React.forwardRef<HTMLInputElement, DateTimeInputProps>((op
         onSegmentChange(key === 'ArrowRight' ? 'right' : 'left');
         event.preventDefault();
         break;
-      // case 'ArrowUp':
-      // case 'ArrowDown':
-      //   // onSegmentValueChange?.(event);
-      //   event.preventDefault();
-      //   break;
+      case 'ArrowUp':
+      case 'ArrowDown':
+        onSegmentValueStep(key === 'ArrowUp' ? 'up' : 'down');
+        event.preventDefault();
+        break;
       case 'Backspace':
         onSegmentValueRemove();
         event.preventDefault();
