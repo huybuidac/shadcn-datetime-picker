@@ -10,10 +10,9 @@ import * as React from 'react';
 import { cn } from '@/lib/utils';
 import { format, parse, isValid, getYear, endOfMonth } from 'date-fns';
 import { useRef, useState, useMemo, useEffect, useLayoutEffect, useCallback } from 'react';
-import { CalendarIcon, CircleAlert, CircleCheck } from 'lucide-react';
+import { CalendarIcon } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useFormContext } from 'react-hook-form';
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { TZDate } from 'react-day-picker';
 
 type DateTimeInputProps = {
@@ -26,6 +25,10 @@ type DateTimeInputProps = {
   timezone?: string;
   hideCalendarIcon?: boolean;
   onCalendarClick?: () => void;
+  /** Hide the built-in inline error message (e.g. when a parent FormMessage handles it). */
+  hideError?: boolean;
+  /** Override the default error message shown when the entered value is invalid. */
+  errorMessage?: React.ReactNode;
 };
 
 // https://date-fns.org/v4.1.0/docs/format
@@ -495,57 +498,55 @@ const DateTimeInput = React.forwardRef<HTMLInputElement, DateTimeInputProps>((op
   }, []);
 
   const [isFocused, setIsFocused] = useState(false);
+  // Show inline error when the user has entered something but it doesn't form
+  // a valid date in range. Tooltip-based hints don't surface on touch devices
+  // (Radix Tooltip is hover-only by design — see issues #2589 / #1573), so we
+  // follow the shadcn FormMessage pattern: a sibling <p> below the input,
+  // accepting vertical layout shift (the standard form-validation behavior).
+  const hasError = !inputValue && !areAllSegmentsEmpty;
+  const showError = hasError && !options.hideError;
   return (
-    <div
-      ref={ref}
-      className={cn(
-        'flex h-10 items-center justify-start rounded-md border border-input bg-background text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium file:text-foreground placeholder:text-muted-foreground  disabled:cursor-not-allowed disabled:opacity-50',
-        isFocused ? 'outline-none ring-2 ring-ring ring-offset-2' : '',
-        options.hideCalendarIcon && 'ps-2',
-        options.className
-      )}
-    >
-      {!options.hideCalendarIcon && (
-        <Button variant="ghost" size="icon" onClick={options.onCalendarClick}>
-          <CalendarIcon className="size-4 text-muted-foreground" />
-        </Button>
-      )}
-      <input
-        ref={mergeRefs(inputRef)}
-        className="font-mono flex-grow min-w-0 bg-transparent py-1 pe-2 text-sm focus:outline-none disabled:cursor-not-allowed disabled:opacity-50"
-        onFocus={() => setIsFocused(true)}
-        onBlur={() => setIsFocused(false)}
-        onClick={onClick}
-        onKeyDown={onKeyDown}
-        onBeforeInput={onBeforeInput}
-        onCompositionStart={onCompositionStart}
-        onCompositionEnd={onCompositionEnd}
-        value={inputStr}
-        placeholder={formatStr}
-        onChange={() => {}}
-        disabled={options.disabled}
-        spellCheck={false}
-        autoComplete="off"
-        autoCorrect="off"
-      />
-      <div className="me-3">
-        {inputValue ? (
-          <CircleCheck className="size-4 text-green-500" />
-        ) : (
-          <TooltipProvider>
-            <Tooltip>
-              <TooltipTrigger className="flex items-center justify-center">
-                <CircleAlert className={cn('size-4', !areAllSegmentsEmpty && 'text-red-500')} />
-              </TooltipTrigger>
-              <TooltipContent>
-                <p>
-                  Please enter a valid value. The input cannot be empty and must be within the range of years 1900 to 2100.
-                </p>
-              </TooltipContent>
-            </Tooltip>
-          </TooltipProvider>
+    <div className="flex flex-col gap-1">
+      <div
+        ref={ref}
+        className={cn(
+          'flex h-10 items-center justify-start rounded-md border border-input bg-background text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium file:text-foreground placeholder:text-muted-foreground  disabled:cursor-not-allowed disabled:opacity-50',
+          isFocused ? 'outline-none ring-2 ring-ring ring-offset-2' : '',
+          options.hideCalendarIcon && 'ps-2',
+          hasError && 'border-destructive',
+          options.className
         )}
+      >
+        {!options.hideCalendarIcon && (
+          <Button variant="ghost" size="icon" onClick={options.onCalendarClick}>
+            <CalendarIcon className="size-4 text-muted-foreground" />
+          </Button>
+        )}
+        <input
+          ref={mergeRefs(inputRef)}
+          className="font-mono flex-grow min-w-0 bg-transparent py-1 px-2 text-sm focus:outline-none disabled:cursor-not-allowed disabled:opacity-50"
+          onFocus={() => setIsFocused(true)}
+          onBlur={() => setIsFocused(false)}
+          onClick={onClick}
+          onKeyDown={onKeyDown}
+          onBeforeInput={onBeforeInput}
+          onCompositionStart={onCompositionStart}
+          onCompositionEnd={onCompositionEnd}
+          value={inputStr}
+          placeholder={formatStr}
+          onChange={() => {}}
+          disabled={options.disabled}
+          spellCheck={false}
+          autoComplete="off"
+          autoCorrect="off"
+          aria-invalid={hasError}
+        />
       </div>
+      {showError && (
+        <p className="text-[0.8rem] font-medium text-destructive">
+          {options.errorMessage ?? 'Invalid date (1900–2100)'}
+        </p>
+      )}
     </div>
   );
 });
