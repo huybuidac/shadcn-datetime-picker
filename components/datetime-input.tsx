@@ -426,6 +426,74 @@ const DateTimeInput = React.forwardRef<HTMLInputElement, DateTimeInputProps>((op
     }
   }, []);
 
+  // Soft keyboards on Android Chrome dispatch keydown with key === 'Unidentified'
+  // (keyCode 229), so onKeyDown can't see the actual character. Real character
+  // data arrives via beforeinput / compositionend — handle it here and dispatch
+  // to the same segment updaters. Desktop keydown.preventDefault() suppresses
+  // the matching beforeinput, so this path only fires for soft-keyboard / IME
+  // / paste input.
+  const composingRef = useRef(false);
+
+  const dispatchChar = useEventCallback((ch: string) => {
+    if (/\d/.test(ch)) {
+      onSegmentNumberValueChange(ch);
+    } else if (/[a-zA-Z]/.test(ch)) {
+      onSegmentPeriodValueChange(ch);
+    }
+  }, []);
+
+  const onCompositionStart = useEventCallback(() => {
+    composingRef.current = true;
+  }, []);
+
+  // IME composition (e.g., Gboard suggestions) emits insertCompositionText
+  // events which are non-cancelable and carry incremental data. Skip them in
+  // beforeinput and process the final composed character here instead.
+  // Only the first char is dispatched: composition data may be multi-char
+  // (e.g. "am" suggestion), but our segment updaters mutate state that
+  // doesn't propagate within a synchronous loop, so dispatching multiple
+  // chars would route them all to a stale curSegment.
+  const onCompositionEnd = useEventCallback((event: React.CompositionEvent<HTMLInputElement>) => {
+    composingRef.current = false;
+    const data = event.data;
+    if (!data) return;
+    dispatchChar(data[0]);
+  }, []);
+
+  const onBeforeInput = useEventCallback((event: React.FormEvent<HTMLInputElement>) => {
+    const nativeEvent = event.nativeEvent as InputEvent;
+    const inputType = nativeEvent.inputType;
+
+    if (inputType === 'deleteContentBackward' || inputType === 'deleteContentForward') {
+      event.preventDefault();
+      onSegmentValueRemove();
+      return;
+    }
+
+    // Composition text is non-cancelable per W3C and arrives as cumulative
+    // data; final value is processed via compositionend. insertFromComposition
+    // is the post-commit cousin that some browsers fire after compositionend —
+    // skip it to avoid double-dispatch.
+    if (
+      inputType === 'insertCompositionText' ||
+      inputType === 'insertFromComposition' ||
+      composingRef.current
+    ) {
+      return;
+    }
+
+    if (inputType?.startsWith('insert')) {
+      const data = nativeEvent.data;
+      if (!data) return;
+      event.preventDefault();
+      // Multi-char data (paste, drop) is intentionally dropped: segment
+      // updaters mutate React state that doesn't flush within a sync loop,
+      // so iterating would route every char to the same stale curSegment.
+      // Single-char input (the soft-keyboard case this fix targets) works.
+      if (data.length === 1) dispatchChar(data);
+    }
+  }, []);
+
   const [isFocused, setIsFocused] = useState(false);
   return (
     <div
@@ -449,11 +517,16 @@ const DateTimeInput = React.forwardRef<HTMLInputElement, DateTimeInputProps>((op
         onBlur={() => setIsFocused(false)}
         onClick={onClick}
         onKeyDown={onKeyDown}
+        onBeforeInput={onBeforeInput}
+        onCompositionStart={onCompositionStart}
+        onCompositionEnd={onCompositionEnd}
         value={inputStr}
         placeholder={formatStr}
         onChange={() => {}}
         disabled={options.disabled}
         spellCheck={false}
+        autoComplete="off"
+        autoCorrect="off"
       />
       <div className="me-3">
         {inputValue ? (
