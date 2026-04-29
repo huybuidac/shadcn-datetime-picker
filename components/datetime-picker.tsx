@@ -1,8 +1,3 @@
-/**
- * Shadcn Datetime Picker with support for timezone, date and time selection, minimum and maximum date limits, and 12-hour format...
- * Check out the live demo at https://shadcn-datetime-picker-pro.vercel.app/
- * Find the latest source code at https://github.com/huybuidac/shadcn-datetime-picker
- */
 /* eslint-disable */
 /** biome-ignore-all lint: third-party component */
 'use client';
@@ -137,6 +132,14 @@ export type DateTimeRenderTriggerProps = {
   setOpen: (open: boolean) => void;
 };
 
+/**
+ * Shadcn Datetime Picker — timezone-aware, keyboard-first date and time picker for shadcn/ui.
+ *
+ * Live demo: https://shadcn-datetime-picker-pro.vercel.app/
+ * Source:    https://github.com/huybuidac/shadcn-datetime-picker
+ *
+ * MIT licensed — feel free to copy, modify, and ship.
+ */
 export function DateTimePicker({
   value,
   onChange,

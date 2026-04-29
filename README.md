@@ -56,6 +56,17 @@ The CLI will:
 2. Install the npm dependencies (`date-fns`, `react-day-picker@^9`, `lucide-react`, …).
 3. Drop the source file into your `components/` folder per your `components.json` aliases.
 
+> **Heads-up on lint warnings.** The shadcn CLI strips file-top directives during install (tracked upstream as [shadcn-ui/ui#9206](https://github.com/shadcn-ui/ui/issues/9206), fix in [PR #8823](https://github.com/shadcn-ui/ui/pull/8823)). If your project uses strict ESLint/Biome rules, you may see warnings on `any`, unused vars, or React-hooks rules in the installed file. Workaround: add an `overrides` entry to your config, e.g.
+>
+> ```jsonc
+> // .eslintrc.json
+> "overrides": [
+>   { "files": ["**/components/datetime-picker.tsx", "**/components/datetime-input.tsx", "**/components/simple-time-picker.tsx"], "rules": { "@typescript-eslint/no-explicit-any": "off", "@typescript-eslint/no-unused-vars": "off", "react-hooks/exhaustive-deps": "off" } }
+> ]
+> ```
+>
+> The credit JSDoc and `'use client'` directive are preserved.
+
 ### Option 2 — copy & paste
 
 If you prefer the manual route:

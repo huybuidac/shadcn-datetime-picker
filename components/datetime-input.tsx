@@ -1,8 +1,3 @@
-/**
- * Shadcn Datetime Input
- * Check out the live demo at https://shadcn-datetime-picker-pro.vercel.app/
- * Find the latest source code at https://github.com/huybuidac/shadcn-datetime-picker
- */
 /* eslint-disable */
 /** biome-ignore-all lint: third-party component */
 'use client';
@@ -78,6 +73,14 @@ const mergeRefs = (...refs: any) => {
     }
   };
 };
+/**
+ * Shadcn DateTime Input — segmented, keyboard-first date/time input for shadcn/ui.
+ *
+ * Live demo: https://shadcn-datetime-picker-pro.vercel.app/
+ * Source:    https://github.com/huybuidac/shadcn-datetime-picker
+ *
+ * MIT licensed — feel free to copy, modify, and ship.
+ */
 const DateTimeInput = React.forwardRef<HTMLInputElement, DateTimeInputProps>((options: DateTimeInputProps, ref) => {
   const { format: formatProp, value: _value, timezone, ...rest } = options;
   const value = useMemo(() => _value ? new TZDate(_value, timezone) : undefined, [_value, timezone]);

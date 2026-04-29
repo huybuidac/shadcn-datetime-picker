@@ -1,8 +1,3 @@
-/**
- * Simple Time Picker
- * Check out the live demo at https://shadcn-datetime-picker-pro.vercel.app/
- * Find the latest source code at https://github.com/huybuidac/shadcn-datetime-picker
- */
 /* eslint-disable */
 /** biome-ignore-all lint: third-party component */
 'use client';
@@ -39,6 +34,14 @@ interface SimpleTimeOption {
 const AM_VALUE = 0;
 const PM_VALUE = 1;
 
+/**
+ * Shadcn Simple Time Picker — compact dropdown time picker for shadcn/ui.
+ *
+ * Live demo: https://shadcn-datetime-picker-pro.vercel.app/
+ * Source:    https://github.com/huybuidac/shadcn-datetime-picker
+ *
+ * MIT licensed — feel free to copy, modify, and ship.
+ */
 export function SimpleTimePicker({
   value,
   onChange,
