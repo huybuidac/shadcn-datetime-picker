@@ -123,16 +123,10 @@ const DateTimeInput = React.forwardRef<HTMLInputElement, DateTimeInputProps>((op
   }, [segments]);
   const areAllSegmentsEmpty = useMemo(() => validSegments.every((s) => !s.value), [validSegments]);
 
-  const inputValue = useMemo(() => {
-    const allHasValue = !validSegments.some((s) => !s.value);
-    if (!allHasValue) return;
-    const date = parse(inputStr, formatStr, value || new TZDate(new Date(), timezone));
-    const year = getYear(date);
-    // console.log('inputValue', {allHasValue, validSegments, inputStr, formatStr, date, year});
-    if (isValid(date) && year > 1900 && year < 2100) {
-      return date;
-    }
-  }, [validSegments, inputStr, formatStr]);
+  const inputValue = useMemo(
+    () => computeInputValue(segments, inputStr, formatStr, value, timezone),
+    [segments, inputStr, formatStr, value, timezone]
+  );
   useEffect(() => {
     if (!inputValue) return;
     if (value?.getTime() !== inputValue.getTime()) {
@@ -148,12 +142,7 @@ const DateTimeInput = React.forwardRef<HTMLInputElement, DateTimeInputProps>((op
       event.stopPropagation();
       const selectionStart = inputRef.current?.selectionStart;
       if (inputRef.current && selectionStart !== undefined && selectionStart !== null) {
-        const validSegments = segments.filter((s) => s.type !== 'space');
-        let segment = validSegments.find(
-          (s) => s.index <= selectionStart && s.index + s.symbols.length >= selectionStart
-        );
-        !segment && (segment = [...validSegments].reverse().find((s) => s.index <= selectionStart));
-        !segment && (segment = validSegments.find((s) => s.index >= selectionStart));
+        const segment = findSegmentAt(segments, selectionStart);
         setCurrentSegment(segment);
         setSelection(inputRef, segment);
       }
@@ -164,11 +153,7 @@ const DateTimeInput = React.forwardRef<HTMLInputElement, DateTimeInputProps>((op
   const onSegmentChange = useEventCallback(
     (direction: 'left' | 'right') => {
       if (!curSegment) return;
-      const validSegments = segments.filter((s) => s.type !== 'space');
-      const segment =
-        direction === 'left'
-          ? [...validSegments].reverse().find((s) => s.index < curSegment.index)
-          : validSegments.find((s) => s.index > curSegment.index);
+      const segment = findAdjacentSegment(segments, curSegment, direction);
       if (segment) {
         setCurrentSegment(segment);
         setSelection(inputRef, segment);
@@ -179,143 +164,12 @@ const DateTimeInput = React.forwardRef<HTMLInputElement, DateTimeInputProps>((op
 
   const onSegmentValueStep = useEventCallback(
     (direction: 'up' | 'down') => {
-      if (!curSegment || curSegment.type === 'space') return;
-      const delta = direction === 'up' ? 1 : -1;
-
-      const findSeg = (type: SegmentType) => segments.find((s) => s.type === type);
-      const yearSeg = findSeg('year');
-      const monthSeg = findSeg('month');
-      const dateSeg = findSeg('date');
-      const hourSeg = findSeg('hour');
-      const minuteSeg = findSeg('minute');
-      const secondSeg = findSeg('second');
-      const periodSeg = findSeg('period');
-      const is12h = hourSeg ? hourSeg.symbols.charAt(0) === 'h' : false;
-
-      const now = new TZDate(value || new Date(), timezone);
-
-      const commit = (updates: Partial<Record<SegmentType, string>>) => {
-        const updated = segments.map((s) => {
-          const newVal = updates[s.type];
-          return newVal !== undefined ? { ...s, value: newVal } : s;
-        });
-        setSegments(updated);
-        const focused = updated.find((s) => s.index === curSegment.index);
-        if (focused) setSelection(inputRef, focused);
-      };
-
-      if (curSegment.type === 'period') {
-        const next = !curSegment.value
-          ? now.getHours() >= 12 ? 'PM' : 'AM'
-          : curSegment.value === 'AM' ? 'PM' : 'AM';
-        commit({ period: next });
-        return;
-      }
-
-      const baseYear = yearSeg?.value ? parseInt(yearSeg.value) : now.getFullYear();
-      const baseMonth = monthSeg?.value ? parseInt(monthSeg.value) - 1 : now.getMonth();
-      const baseDate = dateSeg?.value ? parseInt(dateSeg.value) : now.getDate();
-      let baseHour: number;
-      if (hourSeg?.value) {
-        const h = parseInt(hourSeg.value);
-        if (is12h) {
-          const isPM = periodSeg?.value === 'PM';
-          baseHour = (h % 12) + (isPM ? 12 : 0);
-        } else {
-          baseHour = h;
-        }
-      } else {
-        baseHour = now.getHours();
-      }
-      const baseMinute = minuteSeg?.value ? parseInt(minuteSeg.value) : now.getMinutes();
-      const baseSecond = secondSeg?.value ? parseInt(secondSeg.value) : now.getSeconds();
-
-      const dt = new TZDate(value || new Date(), timezone);
-      dt.setFullYear(baseYear, baseMonth, 1);
-      dt.setHours(baseHour, baseMinute, baseSecond, 0);
-      const lastDay = endOfMonth(dt).getDate();
-      dt.setDate(Math.min(baseDate, lastDay));
-
-      // First press on an empty segment: fill with base value, no step.
-      if (!curSegment.value) {
-        const updates: Partial<Record<SegmentType, string>> = {
-          [curSegment.type]: format(dt, curSegment.symbols),
-        };
-        if (curSegment.type === 'hour' && is12h && periodSeg && !periodSeg.value) {
-          updates.period = now.getHours() >= 12 ? 'PM' : 'AM';
-        }
-        commit(updates);
-        return;
-      }
-
-      switch (curSegment.type) {
-        case 'year': {
-          let y = baseYear + delta;
-          if (y < 1900) y = 2099;
-          if (y > 2099) y = 1900;
-          dt.setFullYear(y);
-          commit({ year: format(dt, curSegment.symbols) });
-          break;
-        }
-        case 'month': {
-          let m = baseMonth + delta;
-          if (m < 0) m = 11;
-          if (m > 11) m = 0;
-          dt.setDate(1);
-          dt.setMonth(m);
-          commit({ month: format(dt, curSegment.symbols) });
-          break;
-        }
-        case 'date': {
-          let d = baseDate + delta;
-          if (d < 1) d = lastDay;
-          if (d > lastDay) d = 1;
-          dt.setDate(d);
-          commit({ date: format(dt, curSegment.symbols) });
-          break;
-        }
-        case 'hour': {
-          if (is12h) {
-            const displayedH = parseInt(hourSeg!.value);
-            let h = displayedH + delta;
-            let nextPeriod = periodSeg?.value || (now.getHours() >= 12 ? 'PM' : 'AM');
-            // Crossing the 11/12 boundary flips AM/PM in either direction.
-            if ((delta > 0 && displayedH === 11) || (delta < 0 && displayedH === 12)) {
-              nextPeriod = nextPeriod === 'AM' ? 'PM' : 'AM';
-            }
-            if (h < 1) h = 12;
-            if (h > 12) h = 1;
-            const updates: Partial<Record<SegmentType, string>> = {
-              hour: String(h).padStart(curSegment.symbols.length, '0'),
-            };
-            if (periodSeg) updates.period = nextPeriod;
-            commit(updates);
-          } else {
-            let h = baseHour + delta;
-            if (h < 0) h = 23;
-            if (h > 23) h = 0;
-            dt.setHours(h);
-            commit({ hour: format(dt, curSegment.symbols) });
-          }
-          break;
-        }
-        case 'minute': {
-          let m = baseMinute + delta;
-          if (m < 0) m = 59;
-          if (m > 59) m = 0;
-          dt.setMinutes(m);
-          commit({ minute: format(dt, curSegment.symbols) });
-          break;
-        }
-        case 'second': {
-          let s = baseSecond + delta;
-          if (s < 0) s = 59;
-          if (s > 59) s = 0;
-          dt.setSeconds(s);
-          commit({ second: format(dt, curSegment.symbols) });
-          break;
-        }
-      }
+      if (!curSegment) return;
+      const updated = stepSegment(segments, curSegment, direction, { value, timezone });
+      if (updated === segments) return;
+      setSegments(updated);
+      const focused = updated.find((s) => s.index === curSegment.index);
+      if (focused) setSelection(inputRef, focused);
     },
     [segments, curSegment, value, timezone]
   );
@@ -323,65 +177,25 @@ const DateTimeInput = React.forwardRef<HTMLInputElement, DateTimeInputProps>((op
   const onSegmentNumberValueChange = useEventCallback(
     (num: string) => {
       if (!curSegment) return;
-      let segment = curSegment;
-      let shouldNext = false;
-      if (segment.type !== 'period') {
-        const length = segment.symbols.length;
-        const rawValue = parseInt(segment.value).toString();
-        let newValue = rawValue.length < length ? rawValue + num : num;
-        let parsedDate = parse(newValue.padStart(length, '0'), segment.symbols, safeDate(timezone));
-        if (!isValid(parsedDate) && newValue.length > 1) {
-          newValue = num;
-          parsedDate = parse(newValue, segment.symbols, safeDate(timezone));
-        }
-        const updatedSegments = segments.map((s) => (s.index === segment.index ? { ...segment, value: newValue } : s));
-        setSegments(updatedSegments);
-        segment = updatedSegments.find((s) => s.index === segment.index)!;
-        shouldNext = newValue.length === length;
-        if (!shouldNext) {
-          switch (segment.type) {
-            case 'month':
-              shouldNext = +newValue > 1;
-              break;
-            case 'date':
-              shouldNext = +newValue > 3;
-              break;
-            case 'hour':
-              shouldNext = +newValue > (segment.symbols.includes('H') ? 2 : 1);
-              break;
-            case 'minute':
-            case 'second':
-              shouldNext = +newValue > 5;
-              break;
-            default:
-              break;
-          }
-        }
+      const { segments: updated, advance } = applyNumberInput(segments, curSegment, num, timezone);
+      setSegments(updated);
+      if (advance) {
+        onSegmentChange('right');
+      } else {
+        const focused = updated.find((s) => s.index === curSegment.index);
+        if (focused) setSelection(inputRef, focused);
       }
-      shouldNext ? onSegmentChange('right') : setSelection(inputRef, segment);
     },
-    [segments, curSegment]
+    [segments, curSegment, timezone]
   );
 
   const onSegmentPeriodValueChange = useEventCallback(
     (key: string) => {
       if (curSegment?.type !== 'period') return;
-      let segment = curSegment;
-      let ok = false;
-      let newValue = '';
-      if (key?.toLowerCase() === 'a') {
-        newValue = 'AM';
-        ok = true;
-      } else if (key?.toLowerCase() === 'p') {
-        newValue = 'PM';
-        ok = true;
-      }
-      if (ok) {
-        const updatedSegments = segments.map((s) => (s.index === segment.index ? { ...segment, value: newValue } : s));
-        setSegments(updatedSegments);
-        segment = updatedSegments.find((s) => s.index === segment.index)!;
-      }
-      setSelection(inputRef, segment);
+      const updated = applyPeriodInput(segments, curSegment, key);
+      if (updated !== segments) setSegments(updated);
+      const focused = updated.find((s) => s.index === curSegment.index);
+      if (focused) setSelection(inputRef, focused);
     },
     [segments, curSegment]
   );
@@ -389,10 +203,10 @@ const DateTimeInput = React.forwardRef<HTMLInputElement, DateTimeInputProps>((op
   const onSegmentValueRemove = useEventCallback(() => {
     if (!curSegment) return;
     if (curSegment.value) {
-      const updatedSegments = segments.map((s) => (s.index === curSegment.index ? { ...curSegment, value: '' } : s));
-      setSegments(updatedSegments);
-      const segment = updatedSegments.find((s) => s.index === curSegment.index)!;
-      setSelection(inputRef, segment);
+      const updated = clearSegmentValue(segments, curSegment);
+      setSegments(updated);
+      const focused = updated.find((s) => s.index === curSegment.index);
+      if (focused) setSelection(inputRef, focused);
     } else {
       onSegmentChange('left');
     }
@@ -561,6 +375,15 @@ interface Segment {
   index: number;
   value: string;
 }
+
+// =============================================================================
+// Pure logic helpers
+// -----------------------------------------------------------------------------
+// Kept in this file (not extracted to a separate module) to preserve the
+// single-file copy-paste distribution model. They are pure functions so they
+// can be unit-tested without rendering the component.
+// =============================================================================
+
 function parseFormat(formatStr: string, value?: Date) {
   const views: Segment[] = [];
   let lastPattern: any = '';
@@ -594,6 +417,249 @@ function parseFormat(formatStr: string, value?: Date) {
       value: value ? format(value, symbols) : '',
     });
   return views;
+}
+
+/** Locate the segment under a caret position (used by onClick). */
+function findSegmentAt(segments: Segment[], position: number): Segment | undefined {
+  const valid = segments.filter((s) => s.type !== 'space');
+  let segment = valid.find(
+    (s) => s.index <= position && s.index + s.symbols.length >= position
+  );
+  if (!segment) segment = [...valid].reverse().find((s) => s.index <= position);
+  if (!segment) segment = valid.find((s) => s.index >= position);
+  return segment;
+}
+
+/** Find the next non-space segment to the left/right of `current`. */
+function findAdjacentSegment(
+  segments: Segment[],
+  current: Segment,
+  direction: 'left' | 'right'
+): Segment | undefined {
+  const valid = segments.filter((s) => s.type !== 'space');
+  return direction === 'left'
+    ? [...valid].reverse().find((s) => s.index < current.index)
+    : valid.find((s) => s.index > current.index);
+}
+
+/**
+ * Apply ArrowUp/ArrowDown stepping to the current segment. Returns the same
+ * segments reference when no change applies (current is a space or unsupported);
+ * otherwise returns a new segments array.
+ */
+function stepSegment(
+  segments: Segment[],
+  current: Segment,
+  direction: 'up' | 'down',
+  ctx: { value?: Date; timezone?: string }
+): Segment[] {
+  if (current.type === 'space') return segments;
+  const delta = direction === 'up' ? 1 : -1;
+
+  const findSeg = (type: SegmentType) => segments.find((s) => s.type === type);
+  const yearSeg = findSeg('year');
+  const monthSeg = findSeg('month');
+  const dateSeg = findSeg('date');
+  const hourSeg = findSeg('hour');
+  const minuteSeg = findSeg('minute');
+  const secondSeg = findSeg('second');
+  const periodSeg = findSeg('period');
+  const is12h = hourSeg ? hourSeg.symbols.charAt(0) === 'h' : false;
+
+  const now = new TZDate(ctx.value || new Date(), ctx.timezone);
+
+  const apply = (updates: Partial<Record<SegmentType, string>>): Segment[] =>
+    segments.map((s) => {
+      const newVal = updates[s.type];
+      return newVal !== undefined ? { ...s, value: newVal } : s;
+    });
+
+  if (current.type === 'period') {
+    const next = !current.value
+      ? now.getHours() >= 12 ? 'PM' : 'AM'
+      : current.value === 'AM' ? 'PM' : 'AM';
+    return apply({ period: next });
+  }
+
+  const baseYear = yearSeg?.value ? parseInt(yearSeg.value) : now.getFullYear();
+  const baseMonth = monthSeg?.value ? parseInt(monthSeg.value) - 1 : now.getMonth();
+  const baseDate = dateSeg?.value ? parseInt(dateSeg.value) : now.getDate();
+  let baseHour: number;
+  if (hourSeg?.value) {
+    const h = parseInt(hourSeg.value);
+    if (is12h) {
+      const isPM = periodSeg?.value === 'PM';
+      baseHour = (h % 12) + (isPM ? 12 : 0);
+    } else {
+      baseHour = h;
+    }
+  } else {
+    baseHour = now.getHours();
+  }
+  const baseMinute = minuteSeg?.value ? parseInt(minuteSeg.value) : now.getMinutes();
+  const baseSecond = secondSeg?.value ? parseInt(secondSeg.value) : now.getSeconds();
+
+  const dt = new TZDate(ctx.value || new Date(), ctx.timezone);
+  dt.setFullYear(baseYear, baseMonth, 1);
+  dt.setHours(baseHour, baseMinute, baseSecond, 0);
+  const lastDay = endOfMonth(dt).getDate();
+  dt.setDate(Math.min(baseDate, lastDay));
+
+  // First press on an empty segment: fill with base value, no step.
+  if (!current.value) {
+    const updates: Partial<Record<SegmentType, string>> = {
+      [current.type]: format(dt, current.symbols),
+    };
+    if (current.type === 'hour' && is12h && periodSeg && !periodSeg.value) {
+      updates.period = now.getHours() >= 12 ? 'PM' : 'AM';
+    }
+    return apply(updates);
+  }
+
+  switch (current.type) {
+    case 'year': {
+      let y = baseYear + delta;
+      if (y < 1900) y = 2099;
+      if (y > 2099) y = 1900;
+      dt.setFullYear(y);
+      return apply({ year: format(dt, current.symbols) });
+    }
+    case 'month': {
+      let m = baseMonth + delta;
+      if (m < 0) m = 11;
+      if (m > 11) m = 0;
+      dt.setDate(1);
+      dt.setMonth(m);
+      return apply({ month: format(dt, current.symbols) });
+    }
+    case 'date': {
+      let d = baseDate + delta;
+      if (d < 1) d = lastDay;
+      if (d > lastDay) d = 1;
+      dt.setDate(d);
+      return apply({ date: format(dt, current.symbols) });
+    }
+    case 'hour': {
+      if (is12h) {
+        const displayedH = parseInt(hourSeg!.value);
+        let h = displayedH + delta;
+        let nextPeriod = periodSeg?.value || (now.getHours() >= 12 ? 'PM' : 'AM');
+        // Crossing the 11/12 boundary flips AM/PM in either direction.
+        if ((delta > 0 && displayedH === 11) || (delta < 0 && displayedH === 12)) {
+          nextPeriod = nextPeriod === 'AM' ? 'PM' : 'AM';
+        }
+        if (h < 1) h = 12;
+        if (h > 12) h = 1;
+        const updates: Partial<Record<SegmentType, string>> = {
+          hour: String(h).padStart(current.symbols.length, '0'),
+        };
+        if (periodSeg) updates.period = nextPeriod;
+        return apply(updates);
+      } else {
+        let h = baseHour + delta;
+        if (h < 0) h = 23;
+        if (h > 23) h = 0;
+        dt.setHours(h);
+        return apply({ hour: format(dt, current.symbols) });
+      }
+    }
+    case 'minute': {
+      let m = baseMinute + delta;
+      if (m < 0) m = 59;
+      if (m > 59) m = 0;
+      dt.setMinutes(m);
+      return apply({ minute: format(dt, current.symbols) });
+    }
+    case 'second': {
+      let s = baseSecond + delta;
+      if (s < 0) s = 59;
+      if (s > 59) s = 0;
+      dt.setSeconds(s);
+      return apply({ second: format(dt, current.symbols) });
+    }
+  }
+  return segments;
+}
+
+/**
+ * Type a digit into the current segment. Returns updated segments plus a flag
+ * indicating whether focus should advance to the next segment.
+ */
+function applyNumberInput(
+  segments: Segment[],
+  current: Segment,
+  num: string,
+  timezone?: string
+): { segments: Segment[]; advance: boolean } {
+  if (current.type === 'period') {
+    return { segments, advance: false };
+  }
+  const length = current.symbols.length;
+  const rawValue = parseInt(current.value).toString();
+  let newValue = rawValue.length < length ? rawValue + num : num;
+  let parsedDate = parse(newValue.padStart(length, '0'), current.symbols, safeDate(timezone));
+  if (!isValid(parsedDate) && newValue.length > 1) {
+    newValue = num;
+    parsedDate = parse(newValue, current.symbols, safeDate(timezone));
+  }
+  const updated = segments.map((s) => (s.index === current.index ? { ...current, value: newValue } : s));
+  let advance = newValue.length === length;
+  if (!advance) {
+    switch (current.type) {
+      case 'month':
+        advance = +newValue > 1;
+        break;
+      case 'date':
+        advance = +newValue > 3;
+        break;
+      case 'hour':
+        advance = +newValue > (current.symbols.includes('H') ? 2 : 1);
+        break;
+      case 'minute':
+      case 'second':
+        advance = +newValue > 5;
+        break;
+      default:
+        break;
+    }
+  }
+  return { segments: updated, advance };
+}
+
+/** Type 'a'/'p' (case-insensitive) into a period segment. */
+function applyPeriodInput(segments: Segment[], current: Segment, key: string): Segment[] {
+  if (current.type !== 'period') return segments;
+  const k = key?.toLowerCase();
+  let newValue = '';
+  if (k === 'a') newValue = 'AM';
+  else if (k === 'p') newValue = 'PM';
+  else return segments;
+  return segments.map((s) => (s.index === current.index ? { ...current, value: newValue } : s));
+}
+
+/** Clear the value of the current segment. */
+function clearSegmentValue(segments: Segment[], current: Segment): Segment[] {
+  return segments.map((s) => (s.index === current.index ? { ...current, value: '' } : s));
+}
+
+/**
+ * Compute a Date from filled segments. Returns undefined if any non-space
+ * segment is empty, the parse fails, or the year falls outside (1900, 2100).
+ */
+function computeInputValue(
+  segments: Segment[],
+  inputStr: string,
+  formatStr: string,
+  refDate?: Date,
+  timezone?: string
+): Date | undefined {
+  const valid = segments.filter((s) => s.type !== 'space');
+  if (valid.length === 0) return undefined;
+  if (valid.some((s) => !s.value)) return undefined;
+  const date = parse(inputStr, formatStr, refDate || new TZDate(new Date(), timezone));
+  const year = getYear(date);
+  if (isValid(date) && year > 1900 && year < 2100) return date;
+  return undefined;
 }
 
 const safeDate = (timezone?: string) => {
@@ -631,3 +697,18 @@ export function useEventCallback<T extends Function>(fn: T, deps: any[]) {
 }
 
 export const useIsomorphicLayoutEffect = typeof document !== 'undefined' ? useLayoutEffect : useEffect;
+
+// Pure helpers exported for unit testing. These are intentionally exported
+// from this single file (rather than moved to a sibling module) to preserve
+// the single-file copy-paste model.
+export {
+  parseFormat,
+  findSegmentAt,
+  findAdjacentSegment,
+  stepSegment,
+  applyNumberInput,
+  applyPeriodInput,
+  clearSegmentValue,
+  computeInputValue,
+};
+export type { Segment, SegmentType };
