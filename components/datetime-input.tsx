@@ -322,7 +322,6 @@ const DateTimeInput = React.forwardRef<HTMLInputElement, DateTimeInputProps>((op
   return (
     <div className="flex flex-col gap-1">
       <div
-        ref={ref}
         className={cn(
           'flex h-10 items-center justify-start rounded-md border border-input bg-background text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium file:text-foreground placeholder:text-muted-foreground  disabled:cursor-not-allowed disabled:opacity-50',
           isFocused ? 'outline-none ring-2 ring-ring ring-offset-2' : '',
@@ -337,7 +336,7 @@ const DateTimeInput = React.forwardRef<HTMLInputElement, DateTimeInputProps>((op
           </Button>
         )}
         <input
-          ref={mergeRefs(inputRef)}
+          ref={mergeRefs(inputRef, ref)}
           className="font-mono flex-grow min-w-0 bg-transparent py-1 px-2 text-sm focus:outline-none disabled:cursor-not-allowed disabled:opacity-50"
           onFocus={() => setIsFocused(true)}
           onBlur={() => setIsFocused(false)}
@@ -358,7 +357,7 @@ const DateTimeInput = React.forwardRef<HTMLInputElement, DateTimeInputProps>((op
       </div>
       {showError && (
         <p className="text-[0.8rem] font-medium text-destructive">
-          {options.errorMessage ?? 'Invalid date (1900–2100)'}
+          {options.errorMessage ?? 'Invalid date (1900–2099)'}
         </p>
       )}
     </div>
@@ -658,7 +657,7 @@ function computeInputValue(
   if (valid.some((s) => !s.value)) return undefined;
   const date = parse(inputStr, formatStr, refDate || new TZDate(new Date(), timezone));
   const year = getYear(date);
-  if (isValid(date) && year > 1900 && year < 2100) return date;
+  if (isValid(date) && year >= 1900 && year <= 2099) return date;
   return undefined;
 }
 

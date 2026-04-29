@@ -1,4 +1,5 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+import * as React from 'react';
 import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { TZDate } from 'react-day-picker';
@@ -44,6 +45,13 @@ describe('DateTimeInput · render', () => {
     const { input } = renderInput({ value: new TZDate('2025-03-07T14:25:00Z', TZ) });
     expect(input.value).toBe('07/03/2025-02:25 PM');
   });
+
+  it('forwardRef resolves to the underlying <input> element', () => {
+    const ref = React.createRef<HTMLInputElement>();
+    render(<DateTimeInput ref={ref} format={FORMAT} timezone={TZ} />);
+    expect(ref.current).toBeInstanceOf(HTMLInputElement);
+    expect(ref.current?.tagName).toBe('INPUT');
+  });
 });
 
 describe('DateTimeInput · typing numbers', () => {
@@ -82,7 +90,7 @@ describe('DateTimeInput · arrow stepping', () => {
     expect(input.value).toContain('12:00 PM');
   });
 
-  it('ArrowDown on year=1900 wraps to 2099 (documents inconsistency)', async () => {
+  it('ArrowDown on year=1900 wraps to 2099', async () => {
     const { input, user } = renderInput({ value: new TZDate('1901-06-15T00:00:00Z', TZ) });
     await focusFirst(input, user);
     await user.keyboard('{ArrowRight}{ArrowRight}'); // → year

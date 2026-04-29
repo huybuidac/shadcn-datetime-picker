@@ -167,7 +167,7 @@ describe('stepSegment', () => {
     expect(get(down, 'hour').value).toBe('23');
   });
 
-  it('year wraps at 1900 ↔ 2099 (current behavior, off-by-one with validity check)', () => {
+  it('year wraps at 1900 ↔ 2099', () => {
     const segs = parseFormat('yyyy', new TZDate('1901-01-01T00:00:00Z', TZ));
     let updated = stepSegment(segs, get(segs, 'year'), 'down', { timezone: TZ });
     expect(get(updated, 'year').value).toBe('1900');
@@ -301,15 +301,19 @@ describe('computeInputValue', () => {
     expect(result?.getUTCDate()).toBe(7);
   });
 
-  it('rejects year ≤ 1900 (documents inconsistency with stepSegment wrap)', () => {
-    const segs = parseFormat(FMT, new TZDate('1900-03-07T14:25:00Z', TZ));
-    const inputStr = segs.map((s) => (s.value ? s.value : s.symbols)).join('');
-    expect(computeInputValue(segs, inputStr, FMT)).toBeUndefined();
+  it('accepts boundary years 1900 and 2099', () => {
+    for (const y of [1900, 2099]) {
+      const segs = parseFormat(FMT, new TZDate(`${y}-03-07T14:25:00Z`, TZ));
+      const inputStr = segs.map((s) => (s.value ? s.value : s.symbols)).join('');
+      expect(computeInputValue(segs, inputStr, FMT)?.getUTCFullYear()).toBe(y);
+    }
   });
 
-  it('rejects year ≥ 2100', () => {
-    const segs = parseFormat(FMT, new TZDate('2100-03-07T14:25:00Z', TZ));
-    const inputStr = segs.map((s) => (s.value ? s.value : s.symbols)).join('');
-    expect(computeInputValue(segs, inputStr, FMT)).toBeUndefined();
+  it('rejects years outside [1900, 2099]', () => {
+    for (const y of [1899, 2100]) {
+      const segs = parseFormat(FMT, new TZDate(`${y}-03-07T14:25:00Z`, TZ));
+      const inputStr = segs.map((s) => (s.value ? s.value : s.symbols)).join('');
+      expect(computeInputValue(segs, inputStr, FMT)).toBeUndefined();
+    }
   });
 });
