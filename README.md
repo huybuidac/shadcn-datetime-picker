@@ -2,7 +2,7 @@
 
 > The most flexible date and time picker for shadcn/ui — installed in one command, fully owned by your project.
 
-![Simple DateTime Picker](images/simple.png)
+![Shadcn Datetime Picker — timezone-aware, keyboard-first date and time pickers for shadcn/ui](images/og-cover.png)
 
 [![Storybook Demo](https://img.shields.io/badge/storybook-live-ff4785?style=flat-square)](https://shadcn-datetime-picker-pro.vercel.app/)
 [![GitHub stars](https://img.shields.io/github/stars/huybuidac/shadcn-datetime-picker?style=flat-square)](https://github.com/huybuidac/shadcn-datetime-picker)

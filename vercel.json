@@ -4,5 +4,43 @@
   "devCommand": "npm run storybook",
   "installCommand": "npm install",
   "framework": null,
-  "outputDirectory": "./storybook-static"
+  "outputDirectory": "./storybook-static",
+  "redirects": [
+    {
+      "source": "/datetime-picker",
+      "destination": "/?path=/docs/datetimepicker--docs",
+      "permanent": true
+    },
+    {
+      "source": "/datetime-input",
+      "destination": "/?path=/docs/datetimeinput--docs",
+      "permanent": true
+    },
+    {
+      "source": "/simple-time-picker",
+      "destination": "/?path=/docs/simpletimepicker--docs",
+      "permanent": true
+    }
+  ],
+  "headers": [
+    {
+      "source": "/sitemap.xml",
+      "headers": [{ "key": "Cache-Control", "value": "public, max-age=3600" }]
+    },
+    {
+      "source": "/robots.txt",
+      "headers": [{ "key": "Cache-Control", "value": "public, max-age=3600" }]
+    },
+    {
+      "source": "/manifest.webmanifest",
+      "headers": [
+        { "key": "Content-Type", "value": "application/manifest+json" },
+        { "key": "Cache-Control", "value": "public, max-age=86400" }
+      ]
+    },
+    {
+      "source": "/.well-known/security.txt",
+      "headers": [{ "key": "Content-Type", "value": "text/plain; charset=utf-8" }]
+    }
+  ]
 }
