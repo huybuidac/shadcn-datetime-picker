@@ -1,4 +1,4 @@
-import { readFileSync, writeFileSync, mkdirSync } from "node:fs";
+import { readFileSync, writeFileSync, mkdirSync, copyFileSync } from "node:fs";
 import { resolve, dirname } from "node:path";
 import { fileURLToPath } from "node:url";
 
@@ -8,6 +8,8 @@ const root = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const out = resolve(root, "storybook-static");
 
 const noscript = `<noscript><div style="font-family:system-ui,sans-serif;max-width:680px;margin:48px auto;padding:24px;line-height:1.6;color:#0a0a0a"><h1 style="font-size:32px;margin:0 0 8px">Shadcn Datetime Picker</h1><p style="color:#525252;margin:0 0 16px">Timezone-aware, keyboard-first date and time pickers for shadcn/ui. Single-file components — copy, own, ship.</p><p>This documentation site requires JavaScript. Source code, install instructions, and component reference are available on <a href="${REPO}">GitHub</a>.</p><ul><li><a href="${REPO}#install">Install via shadcn CLI</a></li><li><a href="${REPO}#datetimepicker">DateTimePicker</a></li><li><a href="${REPO}#datetimeinput">DateTimeInput</a></li><li><a href="${REPO}#simpletimepicker">SimpleTimePicker</a></li></ul></div></noscript>`;
+
+copyFileSync(resolve(root, "images", "favicon.svg"), resolve(out, "favicon.svg"));
 
 const indexPath = resolve(out, "index.html");
 let index = readFileSync(indexPath, "utf8");
@@ -42,7 +44,9 @@ writeFileSync(
       background_color: "#ffffff",
       theme_color: "#2563eb",
       icons: [
+        { src: "/assets/favicon-32.png", sizes: "32x32", type: "image/png" },
         { src: "/assets/apple-touch-icon.png", sizes: "180x180", type: "image/png" },
+        { src: "/assets/icon-192.png", sizes: "192x192", type: "image/png" },
         { src: "/assets/icon-512.png", sizes: "512x512", type: "image/png" },
       ],
     },

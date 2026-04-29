@@ -70,8 +70,22 @@ const iconSvg = (size) => `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 
   <line x1="125" y1="130" x2="135" y2="130" stroke="#1d4ed8" stroke-width="3" stroke-linecap="round"/>
 </svg>`;
 
+const faviconSvg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" width="32" height="32">
+  <rect width="32" height="32" rx="6" fill="#2563eb"/>
+  <rect x="6" y="9" width="20" height="17" rx="2" fill="#ffffff"/>
+  <rect x="6" y="9" width="20" height="5" rx="2" fill="#1d4ed8"/>
+  <rect x="10" y="6" width="2" height="6" rx="1" fill="#1d4ed8"/>
+  <rect x="20" y="6" width="2" height="6" rx="1" fill="#1d4ed8"/>
+  <circle cx="16" cy="20" r="3" fill="#2563eb"/>
+</svg>`;
+
+writeFileSync(resolve(out, "favicon.svg"), faviconSvg);
+
 await sharp(Buffer.from(ogSvg)).png({ compressionLevel: 9 }).toFile(resolve(out, "og-cover.png"));
 await sharp(Buffer.from(iconSvg(180))).resize(180, 180).png({ compressionLevel: 9 }).toFile(resolve(out, "apple-touch-icon.png"));
 await sharp(Buffer.from(iconSvg(512))).resize(512, 512).png({ compressionLevel: 9 }).toFile(resolve(out, "icon-512.png"));
+await sharp(Buffer.from(iconSvg(192))).resize(192, 192).png({ compressionLevel: 9 }).toFile(resolve(out, "icon-192.png"));
+await sharp(Buffer.from(faviconSvg)).resize(32, 32).png({ compressionLevel: 9 }).toFile(resolve(out, "favicon-32.png"));
+await sharp(Buffer.from(faviconSvg)).resize(16, 16).png({ compressionLevel: 9 }).toFile(resolve(out, "favicon-16.png"));
 
-console.log("[gen-assets] Wrote og-cover.png, apple-touch-icon.png, icon-512.png to images/");
+console.log("[gen-assets] Wrote og-cover.png, apple-touch-icon.png, icon-{192,512}.png, favicon.svg, favicon-{16,32}.png to images/");
