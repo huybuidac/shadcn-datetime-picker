@@ -1,0 +1,60 @@
+import { Meta, Title, Subtitle, Primary, Controls, Stories, Source } from '@storybook/blocks';
+import * as DateTimePickerStories from './DateTimePicker.stories';
+
+<Meta of={DateTimePickerStories} />
+
+<Title />
+
+<Subtitle>Calendar + time popover with min/max bounds, IANA timezone, and a fully customisable trigger.</Subtitle>
+
+`DateTimePicker` is the default choice for any date+time input. It opens a calendar with hour/minute/(second) columns inside a popover, supports min/max range constraints, IANA timezones via `react-day-picker`'s `TZDate`, and a `renderTrigger` prop so you can swap the visible button for anything — including the [DateTimeInput](?path=/docs/components-datetimeinput--docs) for keyboard-first entry.
+
+## Install
+
+<Source language="bash" code={`npx shadcn@latest add https://shadcn-datetime-picker-pro.vercel.app/r/datetime-picker.json`} />
+
+The CLI adds `components/datetime-picker.tsx` plus the required shadcn primitives (`button`, `popover`, `scroll-area`) and npm deps (`date-fns`, `react-day-picker@^9`, `@radix-ui/react-icons`, `lucide-react`).
+
+## Usage
+
+<Source language="tsx" code={`import { DateTimePicker } from '@/components/datetime-picker';
+
+export function Example() {
+  const [date, setDate] = useState<Date | undefined>();
+  return <DateTimePicker value={date} onChange={setDate} />;
+}`} />
+
+### With a timezone
+
+<Source language="tsx" code={`<DateTimePicker value={date} onChange={setDate} timezone="Asia/Ho_Chi_Minh" />`} />
+
+### With min / max bounds
+
+<Source language="tsx" code={`const min = useMemo(() => subHours(new Date(), 2), []);
+const max = useMemo(() => addMonths(new Date(), 2), []);
+
+<DateTimePicker value={date} onChange={setDate} min={min} max={max} />`} />
+
+### Custom trigger
+
+<Source language="tsx" code={`<DateTimePicker
+  value={date}
+  onChange={setDate}
+  renderTrigger={({ value, setOpen }) => (
+    <Button variant="outline" onClick={() => setOpen(true)}>
+      {value?.toLocaleString() ?? 'Pick a date'}
+    </Button>
+  )}
+/>`} />
+
+## Live preview
+
+<Primary />
+
+## Props
+
+<Controls />
+
+## Examples
+
+<Stories />

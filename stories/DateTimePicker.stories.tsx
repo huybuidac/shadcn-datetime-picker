@@ -17,7 +17,7 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { SimpleTimePicker } from '@/components/simple-time-picker';
 
 const meta = {
-  title: 'DateTimePicker',
+  title: 'Components/DateTimePicker',
   component: DateTimePicker,
   parameters: {
     // Optional parameter to center the component in the Canvas. More info: https://storybook.js.org/docs/configure/story-layout
@@ -26,7 +26,6 @@ const meta = {
       source: 'https://github.com/huybuidac/shadcn-datetime-picker',
     },
   },
-  tags: ['autodocs'],
   // More on argTypes: https://storybook.js.org/docs/api/argtypes
   argTypes: {
     // backgroundColor: { control: 'color' },
@@ -47,22 +46,9 @@ const meta = {
     onChange: fn(),
   },
   decorators: [
-    (Story, info) => (
+    (Story) => (
       <div className="flex flex-col items-center gap-4">
-        {info.name === 'Default' && (
-          <div className="flex items-center space-x-2">
-            <span className="font-semibold">Repository:</span>
-            <a
-              href="https://github.com/huybuidac/shadcn-datetime-picker"
-              className="text-blue-500 hover:underline"
-              target="_blank"
-              rel="noopener noreferrer"
-            >
-              shadcn-datetime-picker
-            </a>
-          </div>
-        )}
-        <div className="flex justify-center">
+        <div className="w-80">
           <Story />
         </div>
       </div>

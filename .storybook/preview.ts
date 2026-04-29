@@ -11,8 +11,11 @@ const preview: Preview = {
     },
     options: {
       storySort: {
-        order: ['DateTimePicker', 'DateTimeInput', 'SimpleTimePicker'],
-      }
+        order: ['Docs', ['Introduction'], 'Components', ['DateTimePicker', 'DateTimeInput', 'SimpleTimePicker'], '*'],
+      },
+    },
+    docs: {
+      toc: true,
     },
   },
 };

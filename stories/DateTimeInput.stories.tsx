@@ -6,7 +6,7 @@ import '../app/globals.css';
 import { useState } from 'react';
 
 const meta = {
-  title: 'DateTimeInput',
+  title: 'Components/DateTimeInput',
   component: DateTimeInput,
   parameters: {
     // Optional parameter to center the component in the Canvas. More info: https://storybook.js.org/docs/configure/story-layout
@@ -14,7 +14,6 @@ const meta = {
       source: 'https://github.com/huybuidac/shadcn-datetime-picker',
     },
   },
-  tags: ['autodocs'],
   // More on argTypes: https://storybook.js.org/docs/api/argtypes
   argTypes: {
     format: { control: 'text', table: { defaultValue: { summary: 'dd/MM/yyyy-hh:mm aa' } } },
@@ -23,21 +22,8 @@ const meta = {
   args: {
   },
   decorators: [
-    (Story, info) => (
+    (Story) => (
       <div className="flex flex-col items-center gap-4">
-        {info.name === 'Default' && (
-          <div className="flex items-center space-x-2">
-            <span className="font-semibold">Repository:</span>
-            <a
-              href="https://github.com/huybuidac/shadcn-datetime-picker"
-              className="text-blue-500 hover:underline"
-              target="_blank"
-              rel="noopener noreferrer"
-            >
-              shadcn-datetime-picker
-            </a>
-          </div>
-        )}
         <Story />
       </div>
     ),

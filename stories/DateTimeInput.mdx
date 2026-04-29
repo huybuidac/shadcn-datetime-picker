@@ -1,0 +1,71 @@
+import { Meta, Title, Subtitle, Primary, Controls, Stories, Source } from '@storybook/blocks';
+import * as DateTimeInputStories from './DateTimeInput.stories';
+
+<Meta of={DateTimeInputStories} />
+
+<Title />
+
+<Subtitle>Segmented, keyboard-first date/time input — type digits, arrow-step, and toggle AM/PM with `a`/`p`.</Subtitle>
+
+`DateTimeInput` is a controlled input that splits a date/time into focusable segments (day, month, year, hour, minute, …). It feels like the iOS-style native picker on the web: digits auto-advance, arrow keys step values, IME and Android Gboard quirks are handled, and it integrates cleanly with `react-hook-form`.
+
+Use it standalone for dense forms and table grids, or pair it with [DateTimePicker](?path=/docs/components-datetimepicker--docs)'s `renderTrigger` to combine the calendar popover with keyboard entry.
+
+## Install
+
+<Source language="bash" code={`npx shadcn@latest add https://shadcn-datetime-picker-pro.vercel.app/r/datetime-input.json`} />
+
+The CLI adds `components/datetime-input.tsx` plus the required shadcn `button` primitive and npm deps (`date-fns`, `react-day-picker@^9`, `lucide-react`, `react-hook-form`).
+
+## Usage
+
+<Source language="tsx" code={`import { DateTimeInput } from '@/components/datetime-input';
+
+<DateTimeInput
+  value={date}
+  onChange={setDate}
+  format="dd/MM/yyyy hh:mm aa"
+  timezone="UTC"
+/>`} />
+
+### With react-hook-form
+
+Bind `value` and `onChange` explicitly — the component does not currently surface `onBlur`/`name`, so don't spread `{...field}`.
+
+<Source language="tsx" code={`const form = useForm({ defaultValues: { startsAt: new Date() } });
+
+<FormField
+  control={form.control}
+  name="startsAt"
+  render={({ field }) => (
+    <FormItem>
+      <FormLabel>Starts at</FormLabel>
+      <FormControl>
+        <DateTimeInput value={field.value} onChange={field.onChange} hideError />
+      </FormControl>
+      <FormMessage />
+    </FormItem>
+  )}
+/>`} />
+
+## Notes & constraints
+
+- **No `min`/`max` props.** The component itself doesn't reject out-of-range dates. If you need bounds, use it as the trigger of a `DateTimePicker` (which enforces `min`/`max` on the calendar grid).
+- **Valid year range is `[1900, 2099]`.** Years outside this range surface the inline error (or your `errorMessage`) and `onChange` is not called.
+- **Less-obvious props worth knowing:**
+  - `hideCalendarIcon` — drop the trailing calendar icon (e.g. when you render your own affordance).
+  - `onCalendarClick` — callback fired when the calendar icon is clicked; pair with `DateTimePicker`'s `renderTrigger` to open the popover.
+  - `hideError` — suppress the built-in inline error (e.g. when a parent `FormMessage` already renders it).
+  - `errorMessage` — override the default `Invalid date (1900–2099)` message.
+
+## Live preview
+
+<Primary />
+
+## Props
+
+<Controls />
+
+## Examples
+
+<Stories />

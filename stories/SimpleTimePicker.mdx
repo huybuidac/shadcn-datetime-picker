@@ -1,0 +1,49 @@
+import { Meta, Title, Subtitle, Primary, Controls, Stories, Source } from '@storybook/blocks';
+import * as SimpleTimePickerStories from './SimpleTimePicker.stories';
+
+<Meta of={SimpleTimePickerStories} />
+
+<Title />
+
+<Subtitle>Compact dropdown time picker — hour / minute / second columns, 12h or 24h.</Subtitle>
+
+`SimpleTimePicker` is a time-only picker for fields where a full calendar is overkill. It renders three scrollable columns inside a popover (hour, minute, second), respects `min`/`max` bounds by greying out out-of-range values, and supports both 24-hour and 12-hour formats.
+
+Reach for it when you need a standalone time field. For a combined date+time UI, use [DateTimePicker](?path=/docs/components-datetimepicker--docs) instead.
+
+> **Local-time only.** Unlike `DateTimePicker` and `DateTimeInput`, `SimpleTimePicker` has no `timezone` prop — `value` is read and written in the browser's local timezone. If you need timezone-aware time entry, render `DateTimePicker` with `hideTime={false}` (or `DateTimeInput` for keyboard input).
+
+## Install
+
+<Source language="bash" code={`npx shadcn@latest add https://shadcn-datetime-picker-pro.vercel.app/r/simple-time-picker.json`} />
+
+The CLI adds `components/simple-time-picker.tsx` plus the required shadcn primitives (`button`, `popover`, `scroll-area`) and npm deps (`date-fns`, `lucide-react`).
+
+## Usage
+
+<Source language="tsx" code={`import { SimpleTimePicker } from '@/components/simple-time-picker';
+
+const [time, setTime] = useState<Date>(new Date());
+
+<SimpleTimePicker value={time} onChange={setTime} use12HourFormat />`} />
+
+### With min / max bounds
+
+<Source language="tsx" code={`<SimpleTimePicker
+  value={time}
+  onChange={setTime}
+  min={new Date('2026-04-29T09:00:00')}
+  max={new Date('2026-04-29T17:30:00')}
+/>`} />
+
+## Live preview
+
+<Primary />
+
+## Props
+
+<Controls />
+
+## Examples
+
+<Stories />

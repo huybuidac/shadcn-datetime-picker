@@ -8,18 +8,18 @@
   "redirects": [
     {
       "source": "/datetime-picker",
-      "destination": "/?path=/docs/datetimepicker--docs",
-      "permanent": true
+      "destination": "/?path=/docs/components-datetimepicker--docs",
+      "permanent": false
     },
     {
       "source": "/datetime-input",
-      "destination": "/?path=/docs/datetimeinput--docs",
-      "permanent": true
+      "destination": "/?path=/docs/components-datetimeinput--docs",
+      "permanent": false
     },
     {
       "source": "/simple-time-picker",
-      "destination": "/?path=/docs/simpletimepicker--docs",
-      "permanent": true
+      "destination": "/?path=/docs/components-simpletimepicker--docs",
+      "permanent": false
     }
   ],
   "headers": [

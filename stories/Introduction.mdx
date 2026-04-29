@@ -1,0 +1,106 @@
+import { Meta, Source } from '@storybook/blocks';
+
+<Meta title="Docs/Introduction" />
+
+<div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', alignItems: 'center', marginBottom: '24px' }}>
+  <a href="https://github.com/huybuidac/shadcn-datetime-picker" target="_blank" rel="noopener noreferrer">
+    <img src="https://img.shields.io/github/stars/huybuidac/shadcn-datetime-picker?style=flat-square" alt="GitHub stars" />
+  </a>
+  <img src="https://img.shields.io/badge/storybook-live-ff4785?style=flat-square" alt="Storybook live" />
+  <img src="https://img.shields.io/badge/license-MIT-blue?style=flat-square" alt="MIT license" />
+  <img src="https://img.shields.io/badge/shadcn-registry-000000?style=flat-square" alt="shadcn registry" />
+</div>
+
+# Shadcn Datetime Picker
+
+**Timezone-aware, keyboard-first date and time pickers for [shadcn/ui](https://ui.shadcn.com).**
+
+Three single-file components you copy into your project and modify directly. No runtime dependency on this package — `npx shadcn add` drops the source into your `components/` folder and you take ownership from there.
+
+<div style={{ display: 'flex', flexWrap: 'wrap', gap: '12px', alignItems: 'center', margin: '16px 0 24px' }}>
+  <a href="?path=/docs/components-datetimepicker--docs"><strong>→ DateTimePicker</strong></a>
+  <span style={{ color: '#9ca3af' }}>·</span>
+  <a href="?path=/docs/components-datetimeinput--docs"><strong>→ DateTimeInput</strong></a>
+  <span style={{ color: '#9ca3af' }}>·</span>
+  <a href="?path=/docs/components-simpletimepicker--docs"><strong>→ SimpleTimePicker</strong></a>
+</div>
+
+---
+
+## Install
+
+Pick the component you need and run one command. The `shadcn` CLI drops the source file into your `components/` folder and installs the shadcn primitives and npm peers each component needs — see each component's docs page for the exact list.
+
+### DateTimePicker — full date + time popover
+
+<Source language="bash" code={`npx shadcn@latest add https://shadcn-datetime-picker-pro.vercel.app/r/datetime-picker.json`} />
+
+### DateTimeInput — segmented keyboard input
+
+<Source language="bash" code={`npx shadcn@latest add https://shadcn-datetime-picker-pro.vercel.app/r/datetime-input.json`} />
+
+### SimpleTimePicker — time-only dropdown
+
+<Source language="bash" code={`npx shadcn@latest add https://shadcn-datetime-picker-pro.vercel.app/r/simple-time-picker.json`} />
+
+> Prefer the manual route? Each component is one file — copy from the [GitHub repo](https://github.com/huybuidac/shadcn-datetime-picker/tree/main/components) into your `components/` folder.
+
+---
+
+## Components
+
+<table>
+  <thead>
+    <tr>
+      <th align="left">Component</th>
+      <th align="left">What it does</th>
+      <th align="left">When to use</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><strong><a href="?path=/docs/components-datetimepicker--docs">DateTimePicker</a></strong></td>
+      <td>Calendar + time popover with min/max bounds, timezone, custom trigger.</td>
+      <td>The default choice for any date+time input.</td>
+    </tr>
+    <tr>
+      <td><strong><a href="?path=/docs/components-datetimeinput--docs">DateTimeInput</a></strong></td>
+      <td>Segmented keyboard-first input — arrow stepping, IME, RHF integration.</td>
+      <td>When users prefer typing over clicking — table grids, dense forms.</td>
+    </tr>
+    <tr>
+      <td><strong><a href="?path=/docs/components-simpletimepicker--docs">SimpleTimePicker</a></strong></td>
+      <td>Compact dropdown time picker. 12h/24h, hour-minute-second columns.</td>
+      <td>Time-only fields where a calendar is overkill.</td>
+    </tr>
+  </tbody>
+</table>
+
+---
+
+## Highlights
+
+- **Timezone-aware** — `DateTimePicker` and `DateTimeInput` render and edit any IANA timezone via `react-day-picker`'s `TZDate` (`SimpleTimePicker` is local-time only).
+- **Keyboard-first** — `DateTimeInput`'s segments step with arrow keys, digit keys auto-advance, type `a`/`p` to toggle AM/PM.
+- **Soft-keyboard ready** — handles Android Gboard, IME composition, and `beforeinput` quirks.
+- **Min/Max constraints** — `DateTimePicker` greys out out-of-range dates and times; `SimpleTimePicker` disables out-of-range hour/minute/second options. (`DateTimeInput` itself doesn't enforce a range — pair it with a picker if you need bounds.)
+- **Custom trigger** — render `DateTimePicker` behind any button, badge, or your own component via `renderTrigger`.
+- **Form-friendly** — all three work with `react-hook-form`; `DateTimeInput` additionally forwards refs and renders an inline error message for native form integration.
+- **Fully styled with Tailwind** — uses your project's `components.json` aliases and CSS variables.
+- **Copy-paste ownership** — three single-file components, no runtime dependency on this package.
+
+---
+
+## Tech stack
+
+Built on top of [shadcn/ui](https://ui.shadcn.com), [react-day-picker v9](https://daypicker.dev/), [date-fns](https://date-fns.org/), and Tailwind CSS.
+
+## Repository & contributions
+
+Source, issues, and pull requests live at **[github.com/huybuidac/shadcn-datetime-picker](https://github.com/huybuidac/shadcn-datetime-picker)**.
+
+Bug or feature request? [Open an issue](https://github.com/huybuidac/shadcn-datetime-picker/issues). For larger changes, drop a quick proposal first so we can align on the approach.
+
+## License
+
+MIT — do whatever you want, attribution appreciated.
