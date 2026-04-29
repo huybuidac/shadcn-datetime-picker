@@ -5,6 +5,8 @@
  */
 /* eslint-disable */
 /** biome-ignore-all lint: third-party component */
+'use client';
+
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { cn } from '@/lib/utils';

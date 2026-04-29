@@ -1,0 +1,59 @@
+{
+  "$schema": "https://ui.shadcn.com/schema/registry.json",
+  "name": "shadcn-datetime-picker",
+  "homepage": "https://shadcn-datetime-picker-pro.vercel.app",
+  "items": [
+    {
+      "name": "datetime-input",
+      "type": "registry:component",
+      "title": "DateTime Input",
+      "description": "Segmented, keyboard-friendly date/time input with timezone, arrow-key stepping, and form integration.",
+      "files": [
+        {
+          "path": "components/datetime-input.tsx",
+          "type": "registry:component"
+        }
+      ],
+      "registryDependencies": ["button"],
+      "dependencies": [
+        "date-fns",
+        "react-day-picker@^9",
+        "lucide-react",
+        "react-hook-form"
+      ]
+    },
+    {
+      "name": "simple-time-picker",
+      "type": "registry:component",
+      "title": "Simple Time Picker",
+      "description": "Compact dropdown time picker with hour/minute/second columns and 12/24h support.",
+      "files": [
+        {
+          "path": "components/simple-time-picker.tsx",
+          "type": "registry:component"
+        }
+      ],
+      "registryDependencies": ["button", "popover", "scroll-area"],
+      "dependencies": ["date-fns", "lucide-react"]
+    },
+    {
+      "name": "datetime-picker",
+      "type": "registry:component",
+      "title": "DateTime Picker",
+      "description": "Full date and time picker with timezone, min/max bounds, month/year jump, and customizable trigger.",
+      "files": [
+        {
+          "path": "components/datetime-picker.tsx",
+          "type": "registry:component"
+        }
+      ],
+      "registryDependencies": ["button", "popover", "scroll-area"],
+      "dependencies": [
+        "date-fns",
+        "react-day-picker@^9",
+        "@radix-ui/react-icons",
+        "lucide-react"
+      ]
+    }
+  ]
+}

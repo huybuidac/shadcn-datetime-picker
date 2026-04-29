@@ -5,6 +5,8 @@
  */
 /* eslint-disable */
 /** biome-ignore-all lint: third-party component */
+'use client';
+
 import * as React from 'react';
 
 import { cn } from '@/lib/utils';
