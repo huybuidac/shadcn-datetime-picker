@@ -1,3 +1,23 @@
+<script>
+  // Backwards-compat for pre-2026-04 docs URLs.
+  // Old IDs: datetimepicker / datetimeinput / simpletimepicker
+  // New IDs: components-datetimepicker / -datetimeinput / -simpletimepicker
+  (function () {
+    try {
+      var url = new URL(location.href);
+      var p = url.searchParams.get('path');
+      if (!p) return;
+      var next = p.replace(
+        /^\/(docs|story)\/(datetimepicker|datetimeinput|simpletimepicker)(--)/,
+        '/$1/components-$2$3'
+      );
+      if (next !== p) {
+        url.searchParams.set('path', next);
+        location.replace(url.toString());
+      }
+    } catch (e) {}
+  })();
+</script>
 <title>Shadcn Datetime Picker — Flexible Date, Time & Timezone Picker for shadcn/ui</title>
 <meta name="description"
   content="Drop-in date, time, and date-time pickers for shadcn/ui. Timezone-aware, keyboard-first, min/max constraints, react-hook-form ready. Copy-paste single-file components — own the code, no runtime dependency.">

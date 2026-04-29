@@ -7,6 +7,24 @@
   "outputDirectory": "./storybook-static",
   "redirects": [
     {
+      "source": "/",
+      "has": [{ "type": "query", "key": "path", "value": "/docs/datetimepicker--docs" }],
+      "destination": "/?path=/docs/components-datetimepicker--docs",
+      "permanent": false
+    },
+    {
+      "source": "/",
+      "has": [{ "type": "query", "key": "path", "value": "/docs/datetimeinput--docs" }],
+      "destination": "/?path=/docs/components-datetimeinput--docs",
+      "permanent": false
+    },
+    {
+      "source": "/",
+      "has": [{ "type": "query", "key": "path", "value": "/docs/simpletimepicker--docs" }],
+      "destination": "/?path=/docs/components-simpletimepicker--docs",
+      "permanent": false
+    },
+    {
       "source": "/datetime-picker",
       "destination": "/?path=/docs/components-datetimepicker--docs",
       "permanent": false
