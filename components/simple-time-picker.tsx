@@ -145,7 +145,18 @@ export function SimpleTimePicker({
     });
   }, [value, min, max]);
 
-  const [open, setOpen] = useState(false);
+  const [requestedOpen, setRequestedOpen] = useState(false);
+  const open = requestedOpen && !disabled;
+  const setOpen = useCallback(
+    (nextOpen: boolean) => {
+      if (!nextOpen || !disabled) setRequestedOpen(nextOpen);
+    },
+    [disabled]
+  );
+
+  useEffect(() => {
+    if (disabled) setRequestedOpen(false);
+  }, [disabled]);
 
   const hourRef = useRef<HTMLDivElement>(null);
   const minuteRef = useRef<HTMLDivElement>(null);
@@ -241,14 +252,15 @@ export function SimpleTimePicker({
             'flex h-9 px-3 items-center justify-between cursor-pointer font-normal border border-input rounded-md text-sm shadow-sm',
             disabled && 'opacity-50 cursor-not-allowed'
           )}
-          tabIndex={0}
+          aria-disabled={disabled}
+          tabIndex={disabled ? -1 : 0}
         >
           <Clock className="mr-2 size-4" />
           {display}
           <ChevronDownIcon className="ml-2 size-4 shrink-0 opacity-50" />
         </div>
       </PopoverTrigger>
-      <PopoverContent className="p-0" side="top">
+      <PopoverContent className="p-0" side="top" hidden={disabled}>
         <div className="flex-col gap-2 p-2">
           <div className="flex h-56 grow">
             <ScrollArea className="h-full flex-grow">
