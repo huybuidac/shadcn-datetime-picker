@@ -156,7 +156,18 @@ export function DateTimePicker({
   modal = false,
   ...props
 }: DateTimePickerProps & CalendarProps) {
-  const [open, setOpen] = useState(false);
+  const [requestedOpen, setRequestedOpen] = useState(false);
+  const open = requestedOpen && !disabled;
+  const setOpen = useCallback(
+    (nextOpen: boolean) => {
+      if (!nextOpen || !disabled) setRequestedOpen(nextOpen);
+    },
+    [disabled]
+  );
+
+  useEffect(() => {
+    if (disabled) setRequestedOpen(false);
+  }, [disabled]);
   const [monthYearPicker, setMonthYearPicker] = useState<'month' | 'year' | false>(false);
   const initDate = useMemo(() => new TZDate(value || new Date(), timezone), [value, timezone]);
 
@@ -185,7 +196,7 @@ export function DateTimePicker({
   const onSubmit = useCallback(() => {
     onChange(new Date(date));
     setOpen(false);
-  }, [date, onChange]);
+  }, [date, onChange, setOpen]);
 
   const onMonthYearChanged = useCallback(
     (d: Date, mode: 'month' | 'year') => {
@@ -240,7 +251,8 @@ export function DateTimePicker({
               disabled && 'opacity-50 cursor-not-allowed',
               classNames?.trigger
             )}
-            tabIndex={0}
+            aria-disabled={disabled}
+            tabIndex={disabled ? -1 : 0}
           >
             <div className="flex-grow flex items-center">
               <CalendarIcon className="mr-2 size-4" />
@@ -267,7 +279,7 @@ export function DateTimePicker({
           </div>
         )}
       </PopoverTrigger>
-      <PopoverContent className="w-auto p-2">
+      <PopoverContent className="w-auto p-2" hidden={disabled}>
         <div className="flex items-center justify-between">
           <div className="text-md font-bold ms-2 flex items-center cursor-pointer">
             <div>
